@@ -1,4 +1,4 @@
-namespace BillsSystem.Web.Models
+namespace BillsSystem.Web.ViewModels
 {
     public class ErrorViewModel
     {

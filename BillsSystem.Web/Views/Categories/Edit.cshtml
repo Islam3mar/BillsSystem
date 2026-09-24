@@ -1,0 +1,88 @@
+﻿@model BillsSystem.Web.ViewModels.CategoryFormViewModel
+@{
+    ViewData["Title"] = "Categories Form";
+}
+
+<div class="form-card">
+    <h4>Categories Form</h4>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="form-row">
+            <label asp-for="CompanyId"></label>
+            <div class="flex-grow-1">
+                <select asp-for="CompanyId" asp-items="ViewBag.Companies" id="companySelect" class="form-select">
+                    <option value="">choose from Companies</option>
+                </select>
+                <span asp-validation-for="CompanyId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="ItemTypeId">TYPE NAME</label>
+            <div class="flex-grow-1">
+                <select asp-for="ItemTypeId" asp-items="ViewBag.Types" id="typeSelect" class="form-select">
+                    <option value="">choose from Types</option>
+                </select>
+                <span asp-validation-for="ItemTypeId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="Name"></label>
+            <div class="flex-grow-1">
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="Notes"></label>
+            <div class="flex-grow-1">
+                <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // ---------- Cascading Dropdown: الشركة تحدد النوع ----------
+        // هنا فرق واحد عن Create: أول ما الصفحة تفتح، الـ Type بتاع الـ Category
+        // ده أصلاً محمّل جاهز من السيرفر (ViewBag.Types بيجيلها Selected)،
+        // فمش محتاجين نعمل أي Fetch إلا لو المستخدم غيّر الـ Company فعلياً.
+        document.getElementById('companySelect').addEventListener('change', function() {
+            var companyId = this.value;
+            var typeSelect = document.getElementById('typeSelect');
+            typeSelect.innerHTML = '<option value="">choose from Types</option>';
+
+            if (!companyId) return;
+
+            fetch('/Types/GetByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(function(t) {
+                        var option = document.createElement('option');
+                        option.value = t.id;
+                        option.textContent = t.name;
+                        typeSelect.appendChild(option);
+                    });
+                });
+        });
+    </script>
+}

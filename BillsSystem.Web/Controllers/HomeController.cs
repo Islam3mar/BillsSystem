@@ -1,9 +1,11 @@
 using System.Diagnostics;
-using BillsSystem.Web.Models;
+using BillsSystem.Web.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BillsSystem.Web.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public IActionResult Index()

@@ -1,0 +1,53 @@
+﻿@model IEnumerable<BillsSystem.Domain.Entities.ItemType>
+@{
+    ViewData["Title"] = "Types";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Types</h4>
+    <a asp-action="Create" class="btn btn-save"><i class="bi bi-plus-lg"></i> Add New Type</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="list-card">
+    <table class="table table-bordered mb-0">
+        <thead>
+            <tr>
+                <th>Company</th>
+                <th>Type Name</th>
+                <th>Notes</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="4" class="text-center text-muted py-4">No types added yet</td></tr>
+            }
+            @foreach (var type in Model)
+            {
+                <tr>
+                    <td>@type.Company.Name</td>
+                    <td>@type.Name</td>
+                    <td>@type.Notes</td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-id="@type.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@type.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to delete this type?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

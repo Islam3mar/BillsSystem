@@ -1,47 +1,81 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - BillsSystem.Web</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Bills System</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
+
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/BillsSystem.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">BillsSystem.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="topbar-left">
+                <img src="~/images/pioneers-solutions-logo.png" alt="Pioneers" class="topbar-logo" />
+                <span class="topbar-brand">BILLS SYSTEM</span>
+            </div>
+            <div class="topbar-right">
+                <i class="bi bi-search"></i>
+                <i class="bi bi-flag"></i>
+                <span class="topbar-bell">
+                    <i class="bi bi-bell"></i>
+                    <span class="badge">4</span>
+                </span>
+                <i class="bi bi-sliders"></i>
+                <div class="dropdown topbar-user">
+                    <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><span class="dropdown-item-text">@User.Identity?.Name</span></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
                         </li>
                     </ul>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </header>
+
+        <div class="app-body">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <a class="sidebar-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-house-door"></i> Home Page
+                    </a>
+                    <a class="sidebar-link @(currentController == "Companies" ? "active" : "")" asp-controller="Companies" asp-action="Index">
+                        <i class="bi bi-pencil-square"></i> Company Data
+                    </a>
+                    <a class="sidebar-link" href="#"><i class="bi bi-clock-history"></i> Species Data</a>
+                    <a class="sidebar-link" href="#"><i class="bi bi-grid-3x3-gap"></i> All Units</a>
+                    <a class="sidebar-link @(currentController == "Types" ? "active" : "")" asp-controller="Types" asp-action="Index">
+                        <i class="bi bi-clock-history"></i> Types
+                    </a>
+                    <a class="sidebar-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">
+                        <i class="bi bi-layers"></i> Categories
+                    </a>
+                    <a class="sidebar-link" href="#"><i class="bi bi-people"></i> Clients</a>
+                    <a class="sidebar-link" href="#"><i class="bi bi-sliders2"></i> sales invoice</a>
+                    <a class="sidebar-link" href="#"><i class="bi bi-arrow-repeat"></i> Sales Report</a>
+                </nav>
+            </aside>
+
+            <main class="content">
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - BillsSystem.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <button class="fab-settings" type="button" title="Settings"><i class="bi bi-gear"></i></button>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
