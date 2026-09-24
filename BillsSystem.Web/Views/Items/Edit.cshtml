@@ -1,0 +1,105 @@
+﻿@model BillsSystem.Web.ViewModels.ItemFormViewModel
+@{
+    ViewData["Title"] = "Edit Item";
+}
+
+<div class="form-card">
+    <h4>Items Form</h4>
+    <p class="form-subtitle">Edit the selected item's data below.</p>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+        <div class="form-row">
+            <label asp-for="CompanyId"></label>
+            <div class="flex-grow-1">
+                <select asp-for="CompanyId" asp-items="ViewBag.Companies" id="companySelect" class="form-select">
+                    <option value="">choose from Companies</option>
+                </select>
+                <span asp-validation-for="CompanyId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="ItemTypeId">TYPE NAME</label>
+            <div class="flex-grow-1">
+                <select asp-for="ItemTypeId" asp-items="ViewBag.Types" id="typeSelect" class="form-select">
+                    <option value="">choose from Types</option>
+                </select>
+                <span asp-validation-for="ItemTypeId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Name"></label>
+            <div class="flex-grow-1">
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="UnitId">UNIT NAME</label>
+            <div class="flex-grow-1">
+                <select asp-for="UnitId" asp-items="ViewBag.Units" class="form-select">
+                    <option value="">choose from Units</option>
+                </select>
+                <span asp-validation-for="UnitId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="SellingPrice"></label>
+            <div class="flex-grow-1">
+                <input asp-for="SellingPrice" class="form-control" />
+                <span asp-validation-for="SellingPrice" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="BuyingPrice"></label>
+            <div class="flex-grow-1">
+                <input asp-for="BuyingPrice" class="form-control" />
+                <span asp-validation-for="BuyingPrice" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Notes"></label>
+            <div class="flex-grow-1">
+                <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.getElementById('companySelect').addEventListener('change', function() {
+            var companyId = this.value;
+            var typeSelect = document.getElementById('typeSelect');
+            typeSelect.innerHTML = '<option value="">choose from Types</option>';
+
+            if (!companyId) return;
+
+            fetch('/Types/GetByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(function(t) {
+                        var option = document.createElement('option');
+                        option.value = t.id;
+                        option.textContent = t.name;
+                        typeSelect.appendChild(option);
+                    });
+                });
+        });
+    </script>
+}

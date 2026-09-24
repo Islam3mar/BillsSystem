@@ -16,6 +16,7 @@ namespace BillsSystem.Infrastructure.Repositories
         private IItemTypeRepository? _itemTypes;
         private ICategoryRepository? _categories;
         private IUnitRepository? _units;
+        private IItemRepository? _items;
         #endregion
 
         public UnitOfWork(ApplicationDbContext context) => _context = context;
@@ -27,6 +28,7 @@ namespace BillsSystem.Infrastructure.Repositories
         public IItemTypeRepository ItemTypes => _itemTypes ??= new ItemTypeRepository(_context);
         public ICategoryRepository Categories => _categories ??= new CategoryRepository(_context);
         public IUnitRepository Units => _units ??= new UnitRepository(_context);
+        public IItemRepository Items => _items ??= new ItemRepository(_context);
         #endregion
 
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();

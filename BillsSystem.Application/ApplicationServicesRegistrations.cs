@@ -18,6 +18,7 @@ namespace BillsSystem.Application
             services.AddScoped<IItemTypeService, ItemTypeService>();
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IUnitService, UnitService>();
+            services.AddScoped<IItemService, ItemService>();
 
             services.AddValidatorsFromAssemblyContaining<CompanyInputValidator>();
 
