@@ -9,6 +9,7 @@ namespace BillsSystem.Domain.Interfaces
         ICompanyRepository Companies { get; }
         IItemTypeRepository ItemTypes { get; }
         ICategoryRepository Categories { get; }
+        IUnitRepository Units { get; }
 
         Task<int> SaveChangesAsync();
     }

@@ -1,0 +1,38 @@
+﻿@model BillsSystem.Web.ViewModels.UnitFormViewModel
+@{
+    ViewData["Title"] = "Units Form";
+}
+
+<div class="form-card">
+    <h4>Units Form</h4>
+    <p class="form-subtitle">This is the basic horizontal form with labels on left and cost estimation form is the default position.</p>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+        <div class="form-row">
+            <label asp-for="Name"></label>
+            <div class="flex-grow-1">
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Notes"></label>
+            <div class="flex-grow-1">
+                <textarea asp-for="Notes" class="form-control" rows="4"></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

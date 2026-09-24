@@ -1,0 +1,53 @@
+﻿@model IEnumerable<BillsSystem.Domain.Entities.Unit>
+@{
+    ViewData["Title"] = "All Units";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">All Units</h4>
+    <a asp-action="Create" class="btn btn-save"><i class="bi bi-plus-lg"></i> Add New Unit</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="list-card">
+    <table class="table table-bordered mb-0">
+        <thead>
+            <tr>
+                <th>Unit Name</th>
+                <th>Notes</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-4">No units added yet</td>
+                </tr>
+            }
+            @foreach (var unit in Model)
+            {
+                <tr>
+                    <td>@unit.Name</td>
+                    <td>@unit.Notes</td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-id="@unit.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@unit.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to delete this unit?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

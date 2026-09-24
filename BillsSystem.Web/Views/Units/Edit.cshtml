@@ -1,0 +1,39 @@
+﻿@model BillsSystem.Web.ViewModels.UnitFormViewModel
+@{
+    ViewData["Title"] = "Edit Unit";
+}
+
+<div class="form-card">
+    <h4>Units Form</h4>
+    <p class="form-subtitle">Edit the selected unit's data below.</p>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+        <div class="form-row">
+            <label asp-for="Name"></label>
+            <div class="flex-grow-1">
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label asp-for="Notes"></label>
+            <div class="flex-grow-1">
+                <textarea asp-for="Notes" class="form-control" rows="4"></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
