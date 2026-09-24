@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="BillsSystem.Application/BillsSystem.Application.csproj" />
+  <Project Path="BillsSystem.Domain/BillsSystem.Domain.csproj" />
+  <Project Path="BillsSystem.Infrastructure/BillsSystem.Infrastructure.csproj" />
+  <Project Path="BillsSystem.Web/BillsSystem.Web.csproj" />
+</Solution>
