@@ -1,8 +1,109 @@
-﻿@{
+﻿@model BillsSystem.Web.ViewModels.HomeDashboardViewModel
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h4 class="mb-3">Welcome back 👋</h4>
+
+<!-- ===== KPI Cards ===== -->
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#4b5aa0;"><i class="bi bi-receipt"></i></div>
+            <div>
+                <div class="kpi-label">Bills This Month</div>
+                <div class="kpi-value">@Model.MonthBillsCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#22b860;"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="kpi-label">Net Sales This Month</div>
+                <div class="kpi-value">@Model.MonthNetSales.ToString("0.00")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#f1a545;"><i class="bi bi-exclamation-circle"></i></div>
+            <div>
+                <div class="kpi-label">Outstanding (All Time)</div>
+                <div class="kpi-value">@Model.OutstandingAllTime.ToString("0.00")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background:#18c2a0;"><i class="bi bi-people"></i></div>
+            <div>
+                <div class="kpi-label">Total Clients</div>
+                <div class="kpi-value">@Model.TotalClients</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Quick Actions ===== -->
+<div class="row g-3 mt-1">
+    <div class="col-md-3">
+        <a asp-controller="Bills" asp-action="Create" class="quick-action">
+            <i class="bi bi-plus-circle"></i> New Invoice
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="Clients" asp-action="Create" class="quick-action">
+            <i class="bi bi-person-plus"></i> New Client
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="Items" asp-action="Create" class="quick-action">
+            <i class="bi bi-box-seam"></i> New Item
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="SalesReport" asp-action="Index" class="quick-action">
+            <i class="bi bi-bar-chart"></i> Sales Report
+        </a>
+    </div>
+</div>
+
+<!-- ===== Recent Bills ===== -->
+<div class="list-card mt-4">
+    <h6 class="mb-3">Recent Invoices</h6>
+    @if (!Model.RecentBills.Any())
+    {
+        <p class="text-muted mb-0">No invoices yet — create your first one from Quick Actions above.</p>
+    }
+    else
+    {
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr>
+                    <th>Bill #</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th class="text-end">The Net</th>
+                    <th class="text-end">The Rest</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bill in Model.RecentBills)
+                {
+                    <tr>
+                        <td>@bill.Id</td>
+                        <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                        <td>@bill.ClientName</td>
+                        <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                        <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                        <td>
+                            <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>

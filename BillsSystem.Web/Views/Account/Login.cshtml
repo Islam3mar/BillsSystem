@@ -8,32 +8,48 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bills System - Login</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="bg-light">
-    <div class="container d-flex align-items-center justify-content-center" style="min-height:100vh;">
-        <div class="card p-4" style="width: 400px;">
-            <h4 class="text-center mb-4">Bills System</h4>
+<body>
+    <div class="auth-shell">
+        <div class="auth-side d-none d-md-flex">
+            <div class="auth-logo">
+                <img src="~/images/pioneers-solutions-logo.png" alt="Pioneers" style="width:40px;height:40px;object-fit:contain;" />
+            </div>
+            <h2>BILLS SYSTEM</h2>
+            <p>Manage your companies, items, clients and sales invoices — all in one place.</p>
+        </div>
 
-            <form asp-action="Login" method="post">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+        <div class="auth-form-side">
+            <div class="auth-card">
+                <h4>Welcome back</h4>
+                <div class="auth-subtitle">Sign in to your admin account</div>
 
-                <div class="mb-3">
-                    <label asp-for="Username" class="form-label"></label>
-                    <input asp-for="Username" class="form-control" autofocus />
-                    <span asp-validation-for="Username" class="text-danger"></span>
-                </div>
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2 small"></div>
 
-                <div class="mb-3">
-                    <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" class="form-control" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label"></label>
+                        <input asp-for="Username" class="form-control" autofocus placeholder="Enter your username" />
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
 
-                <button type="submit" class="btn btn-primary w-100">Sign in</button>
-            </form>
+                    <div class="mb-4">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" placeholder="Enter your password" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign in
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
