@@ -3,7 +3,24 @@
 @{
     ViewData["Title"] = "Sales Invoice";
 }
+<style>
+    .form-card {
+        max-width: 1100px; /* كانت غالبًا أضيق من كده، زوّدها لحد ما تريحك */
+    }
 
+    #itemsTable th,
+    #itemsTable td {
+        padding: 0.4rem;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+
+    #itemsTable .form-select-sm,
+    #itemsTable .form-control-sm {
+        min-width: 70px;
+        padding: 0.2rem 0.4rem;
+    }
+</style>
 <div class="form-card">
     <h4>Sales Invoice</h4>
 
@@ -74,7 +91,8 @@
         <div id="itemError" class="text-danger mb-2"></div>
 
         <div class="list-card mt-2">
-            <table class="table table-bordered mb-0" id="itemsTable">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0" id="itemsTable">
                 <thead>
                     <tr>
                         <th>Item Code</th>
@@ -129,6 +147,7 @@
                     }
                 </tbody>
             </table>
+            </div>
         </div>
 
         <hr />

@@ -1,0 +1,222 @@
+﻿@model BillsSystem.Web.ViewModels.SalesReportFilterViewModel
+@using BillsSystem.Application.DTOs
+@{
+    ViewData["Title"] = "Sales Report";
+    var report = ViewBag.Report as SalesReportResult;
+}
+
+<style>
+    @@media print {
+        .topbar, .sidebar, .no-print {
+            display: none !important;
+        }
+
+        .app-body, .form-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+        }
+    }
+</style>
+
+<div class="form-card no-print">
+    <h4>Sales Report</h4>
+
+    <form asp-action="Index" method="get" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label asp-for="FromDate" class="form-label small text-muted">FROM</label>
+            <input asp-for="FromDate" type="date" class="form-control" />
+            <span asp-validation-for="FromDate" class="text-danger"></span>
+        </div>
+        <div class="col-auto">
+            <label asp-for="ToDate" class="form-label small text-muted">TO</label>
+            <input asp-for="ToDate" type="date" class="form-control" />
+            <span asp-validation-for="ToDate" class="text-danger"></span>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-save"><i class="bi bi-funnel"></i> Generate Report</button>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-x-circle"></i> Reset</a>
+        </div>
+        @if (report != null)
+        {
+            <div class="col-auto ms-auto">
+                <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        }
+    </form>
+</div>
+
+@if (report != null)
+{
+    <div class="mt-3">
+        <h5 class="mb-3">
+            Report Period: @report.FromDate.ToString("yyyy/MM/dd") &rarr; @report.ToDate.ToString("yyyy/MM/dd")
+        </h5>
+
+        <!-- ===== KPI Cards ===== -->
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">TOTAL BILLS</div>
+                    <div class="fs-4 fw-bold">@report.BillsCount</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">TOTAL SALES (Before Discount)</div>
+                    <div class="fs-4 fw-bold">@report.TotalBillsAmount.ToString("0.00")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">TOTAL DISCOUNTS</div>
+                    <div class="fs-4 fw-bold text-danger">@report.TotalDiscounts.ToString("0.00")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">NET SALES</div>
+                    <div class="fs-4 fw-bold text-success">@report.TotalNetSales.ToString("0.00")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">COLLECTED (PAID UP)</div>
+                    <div class="fs-4 fw-bold">@report.TotalCollected.ToString("0.00")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">OUTSTANDING (CLIENTS OWE)</div>
+                    <div class="fs-4 fw-bold text-warning">@report.TotalOutstanding.ToString("0.00")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="list-card p-3 text-center">
+                    <div class="text-muted small">AVG. BILL VALUE</div>
+                    <div class="fs-4 fw-bold">@report.AverageBillValue.ToString("0.00")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Top Items / Top Clients ===== -->
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <div class="list-card p-3">
+                    <h6>Top Selling Items</h6>
+                    @if (!report.TopSellingItems.Any())
+                    {
+                        <p class="text-muted mb-0">No sales in this period</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead>
+                                <tr><th>Item</th><th>Unit</th><th class="text-end">Qty</th><th class="text-end">Revenue</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in report.TopSellingItems)
+                                {
+                                    <tr>
+                                        <td>@item.ItemName</td>
+                                        <td>@item.UnitName</td>
+                                        <td class="text-end">@item.QuantitySold</td>
+                                        <td class="text-end">@item.TotalRevenue.ToString("0.00")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="list-card p-3">
+                    <h6>Top Clients</h6>
+                    @if (!report.TopClients.Any())
+                    {
+                        <p class="text-muted mb-0">No sales in this period</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead>
+                                <tr><th>Client</th><th class="text-end">Bills</th><th class="text-end">Net Sales</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var client in report.TopClients)
+                                {
+                                    <tr>
+                                        <td>@client.ClientName</td>
+                                        <td class="text-end">@client.BillsCount</td>
+                                        <td class="text-end">@client.TotalNet.ToString("0.00")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Bills Table ===== -->
+        <div class="list-card mt-3">
+            <table class="table table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>Bill #</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th class="text-end">Items</th>
+                        <th class="text-end">Bills Total</th>
+                        <th class="text-end">Discount</th>
+                        <th class="text-end">The Net</th>
+                        <th class="text-end">Paid Up</th>
+                        <th class="text-end">The Rest</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!report.Bills.Any())
+                    {
+                        <tr><td colspan="10" class="text-center text-muted py-4">No invoices in this period</td></tr>
+                    }
+                    @foreach (var bill in report.Bills)
+                    {
+                        <tr>
+                            <td>@bill.Id</td>
+                            <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                            <td>@bill.ClientName</td>
+                            <td class="text-end">@bill.ItemsCount</td>
+                            <td class="text-end">@bill.BillsTotal.ToString("0.00")</td>
+                            <td class="text-end">@bill.ValueDiscount.ToString("0.00")</td>
+                            <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                            <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
+                            <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                            <td class="no-print">
+                                <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                @if (report.Bills.Any())
+                {
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="4" class="text-end">Totals:</td>
+                            <td class="text-end">@report.TotalBillsAmount.ToString("0.00")</td>
+                            <td class="text-end">@report.TotalDiscounts.ToString("0.00")</td>
+                            <td class="text-end">@report.TotalNetSales.ToString("0.00")</td>
+                            <td class="text-end">@report.TotalCollected.ToString("0.00")</td>
+                            <td class="text-end">@report.TotalOutstanding.ToString("0.00")</td>
+                            <td class="no-print"></td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+    </div>
+}

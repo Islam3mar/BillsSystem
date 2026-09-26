@@ -21,6 +21,7 @@ namespace BillsSystem.Application
             services.AddScoped<IItemService, ItemService>();
             services.AddScoped<IClientService, ClientService>();
             services.AddScoped<IBillService, BillService>();
+            services.AddScoped<ISalesReportService, SalesReportService>();
 
 
 
