@@ -1,0 +1,371 @@
+﻿@model BillsSystem.Web.ViewModels.BillFormViewModel
+@using BillsSystem.Domain.Enums
+@{
+    ViewData["Title"] = "Sales Invoice";
+}
+
+<div class="form-card">
+    <h4>Sales Invoice</h4>
+
+    <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+    <form asp-action="Create" method="post" id="billForm">
+        @Html.AntiForgeryToken()
+
+        <h6 class="mt-2">Bills Details</h6>
+        <div class="form-row">
+            <label asp-for="BillDate"></label>
+            <div class="flex-grow-1">
+                <input asp-for="BillDate" type="date" class="form-control" />
+                <span asp-validation-for="BillDate" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>BILLS NUMBER</label>
+            <div class="flex-grow-1">
+                <input class="form-control" value="Auto Generated" disabled />
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="ClientId">CLIENT NAME</label>
+            <div class="flex-grow-1">
+                <select asp-for="ClientId" asp-items="ViewBag.Clients" class="form-select">
+                    <option value="">Choose From Clients</option>
+                </select>
+                <span asp-validation-for="ClientId" class="text-danger"></span>
+            </div>
+        </div>
+
+        <hr />
+        <h6>Item Details</h6>
+        <div class="form-row">
+            <label>ITEMS NAME</label>
+            <div class="flex-grow-1">
+                <select id="itemSelect" class="form-select">
+                    <option value="">Choose From Items</option>
+                    @foreach (var it in (SelectList)ViewBag.Items)
+                    {
+                        <option value="@it.Value">@it.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>SELLING PRICE</label>
+            <div class="flex-grow-1">
+                <input id="sellingPriceInput" type="number" step="0.01" class="form-control" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label>QUANTITY</label>
+            <div class="flex-grow-1">
+                <input id="quantityInput" type="number" step="1" min="1" class="form-control" />
+            </div>
+        </div>
+        <div class="form-row">
+            <label>TOTAL</label>
+            <div class="flex-grow-1">
+                <input id="totalPreview" class="form-control" disabled />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" id="addItemBtn" class="btn btn-save"><i class="bi bi-plus-lg"></i> Add</button>
+        </div>
+        <div id="itemError" class="text-danger mb-2"></div>
+
+        <div class="list-card mt-2">
+            <table class="table table-bordered mb-0" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>Item Code</th>
+                        <th>Item Name</th>
+                        <th>Unit</th>
+                        <th>Quantity</th>
+                        <th>Selling Price</th>
+                        <th>Discount Type</th>
+                        <th>Discount</th>
+                        <th>Total</th>
+                        <th>Balance</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        var total = Model.Items[i].SellingPrice * Model.Items[i].Quantity;
+                        var balance = Model.Items[i].DiscountType == DiscountType.Percentage
+                            ? total - (total * Model.Items[i].Discount / 100)
+                            : total - Model.Items[i].Discount;
+
+                        <tr data-row>
+                            <td>
+                                @Model.Items[i].ItemId
+                                <input type="hidden" name="Items[@i].ItemId" value="@Model.Items[i].ItemId" />
+                            </td>
+                            <td>@Model.Items[i].ItemName</td>
+                            <td>@Model.Items[i].UnitName</td>
+                            <td>
+                                @Model.Items[i].Quantity
+                                <input type="hidden" name="Items[@i].Quantity" value="@Model.Items[i].Quantity" />
+                            </td>
+                            <td>
+                                @Model.Items[i].SellingPrice.ToString("0.00")
+                                <input type="hidden" name="Items[@i].SellingPrice" value="@Model.Items[i].SellingPrice" />
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm discount-type-select" name="Items[@i].DiscountType">
+                                    <option value="0" selected="@(Model.Items[i].DiscountType == DiscountType.Value)">Value</option>
+                                    <option value="1" selected="@(Model.Items[i].DiscountType == DiscountType.Percentage)">Percentage</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" class="form-control form-control-sm discount-input"
+                                       name="Items[@i].Discount" value="@Model.Items[i].Discount" />
+                            </td>
+                            <td class="row-total">@total.ToString("0.00")</td>
+                            <td class="row-balance">@balance.ToString("0.00")</td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <hr />
+        <h6>Other Details</h6>
+        <div class="form-row">
+            <label>BILLS TOTAL</label>
+            <div class="flex-grow-1">
+                <input id="billsTotalPreview" class="form-control" disabled />
+            </div>
+        </div>
+
+        <!-- بيتحدد أوتوماتيك حسب آخر حقل كتب فيه اليوزر (Percentage أو Value) -->
+        <input type="hidden" asp-for="DiscountType" id="discountTypeInput" />
+
+        <div class="form-row">
+            <label asp-for="PercentageDiscount">PERCENTAGE DISCOUNT</label>
+            <div class="flex-grow-1">
+                <input asp-for="PercentageDiscount" id="percentageDiscountInput" type="number" step="0.0001" class="form-control" />
+                <span asp-validation-for="PercentageDiscount" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="ValueDiscount">VALUE DISCOUNT</label>
+            <div class="flex-grow-1">
+                <input asp-for="ValueDiscount" id="valueDiscountInput" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="ValueDiscount" class="text-danger"></span>
+                <small class="text-muted">اكتب في أي حقل من الاتنين — اللي بتكتب فيه هو اللي هيتخصم بالظبط، والتاني بيتحدث للعرض بس.</small>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>THE NET</label>
+            <div class="flex-grow-1">
+                <input id="theNetPreview" class="form-control" disabled />
+            </div>
+        </div>
+        <div class="form-row">
+            <label asp-for="PaidUp">PAID UP</label>
+            <div class="flex-grow-1">
+                <input asp-for="PaidUp" id="paidUpInput" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="PaidUp" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>THE REST</label>
+            <div class="flex-grow-1">
+                <input id="theRestPreview" class="form-control" disabled />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        let rowIndex = @Model.Items.Count;
+
+        const itemSelect = document.getElementById('itemSelect');
+        const sellingPriceInput = document.getElementById('sellingPriceInput');
+        const quantityInput = document.getElementById('quantityInput');
+        const totalPreview = document.getElementById('totalPreview');
+        const itemsTableBody = document.getElementById('itemsTableBody');
+        const itemError = document.getElementById('itemError');
+
+        // ---------- لما يختار صنف: نجيب سعره ووحدته ----------
+        itemSelect.addEventListener('change', function() {
+            itemError.textContent = '';
+            if (!this.value) { sellingPriceInput.value = ''; return; }
+
+            fetch('/Bills/GetItemDetails?itemId=' + this.value)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data) return;
+                    sellingPriceInput.value = data.sellingPrice;
+                    sellingPriceInput.dataset.unitName = data.unitName;
+                    sellingPriceInput.dataset.itemName = data.itemName;
+                    updateTotalPreview();
+                });
+        });
+
+        function updateTotalPreview() {
+            const price = parseFloat(sellingPriceInput.value) || 0;
+            const qty = parseInt(quantityInput.value) || 0;
+            totalPreview.value = (price * qty).toFixed(2);
+        }
+        sellingPriceInput.addEventListener('input', updateTotalPreview);
+        quantityInput.addEventListener('input', updateTotalPreview);
+
+        // ---------- زرار Add: بيضيف صف جديد للجدول ----------
+        document.getElementById('addItemBtn').addEventListener('click', function() {
+            itemError.textContent = '';
+
+            const itemId = itemSelect.value;
+            const itemName = sellingPriceInput.dataset.itemName || itemSelect.options[itemSelect.selectedIndex].text;
+            const unitName = sellingPriceInput.dataset.unitName || '';
+            const price = parseFloat(sellingPriceInput.value) || 0;
+            const qty = parseInt(quantityInput.value) || 0;
+
+            if (!itemId) { itemError.textContent = 'ITEM NAME is Required'; return; }
+            if (qty <= 0) { itemError.textContent = 'Quantity Must be Greater than Zero'; return; }
+
+            const total = price * qty;
+            const index = rowIndex++;
+
+            const row = document.createElement('tr');
+            row.setAttribute('data-row', '');
+            row.innerHTML = `
+                        <td>${itemId}<input type="hidden" name="Items[${index}].ItemId" value="${itemId}" /></td>
+                        <td>${itemName}</td>
+                        <td>${unitName}</td>
+                        <td>${qty}<input type="hidden" name="Items[${index}].Quantity" value="${qty}" /></td>
+                        <td>${price.toFixed(2)}<input type="hidden" name="Items[${index}].SellingPrice" value="${price}" /></td>
+                        <td>
+                            <select class="form-select form-select-sm discount-type-select" name="Items[${index}].DiscountType">
+                                <option value="0" selected>Value</option>
+                                <option value="1">Percentage</option>
+                            </select>
+                        </td>
+                        <td><input type="number" step="0.01" class="form-control form-control-sm discount-input" name="Items[${index}].Discount" value="0" /></td>
+                        <td class="row-total">${total.toFixed(2)}</td>
+                        <td class="row-balance">${total.toFixed(2)}</td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+                    `;
+            itemsTableBody.appendChild(row);
+
+            // إعادة تعيين فورم الإضافة
+            itemSelect.value = '';
+            sellingPriceInput.value = '';
+            quantityInput.value = '';
+            totalPreview.value = '';
+
+            recalculateAll();
+        });
+
+        // ---------- تغيير الخصم أو نوعه في أي صف ----------
+        itemsTableBody.addEventListener('input', function(e) {
+            if (!e.target.classList.contains('discount-input')) return;
+            recalculateAll();
+        });
+        itemsTableBody.addEventListener('change', function(e) {
+            if (!e.target.classList.contains('discount-type-select')) return;
+            recalculateAll();
+        });
+
+        // ---------- حذف صف ----------
+        itemsTableBody.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('remove-row-btn')) return;
+            e.target.closest('tr').remove();
+            recalculateAll();
+        });
+
+        function recalculateAll() {
+            let billsTotal = 0;
+
+            document.querySelectorAll('#itemsTableBody tr[data-row]').forEach(row => {
+                const total = parseFloat(row.querySelector('.row-total').textContent) || 0;
+                const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+                const type = row.querySelector('.discount-type-select').value; // "0" Value / "1" Percentage
+                const balance = type === '1' ? total - (total * discount / 100) : total - discount;
+
+                row.querySelector('.row-balance').textContent = balance.toFixed(2);
+                billsTotal += balance;
+            });
+
+            document.getElementById('billsTotalPreview').value = billsTotal.toFixed(2);
+            recalculateOtherDetails(billsTotal);
+        }
+
+        // ---------- Other Details: Percentage <-> Value على مستوى الفاتورة ----------
+        const percentageInput = document.getElementById('percentageDiscountInput');
+        const valueDiscountInput = document.getElementById('valueDiscountInput');
+        const discountTypeInput = document.getElementById('discountTypeInput');
+        const paidUpInput = document.getElementById('paidUpInput');
+
+        function currentBillsTotal() {
+            return parseFloat(document.getElementById('billsTotalPreview').value) || 0;
+        }
+
+        function recalculateOtherDetails(billsTotal) {
+            const paid = parseFloat(paidUpInput.value) || 0;
+            let valueDiscount;
+
+            if (discountTypeInput.value === '0') {
+                // Value هي المصدر الحالي، بتتخصم بالظبط زي ما اتكتبت
+                valueDiscount = parseFloat(valueDiscountInput.value) || 0;
+            } else {
+                // Percentage هي المصدر الحالي
+                const pct = parseFloat(percentageInput.value) || 0;
+                valueDiscount = billsTotal * pct / 100;
+            }
+
+            const net = Math.max(0, billsTotal - valueDiscount);
+            const rest = net - paid;
+
+            document.getElementById('theNetPreview').value = net.toFixed(2);
+            document.getElementById('theRestPreview').value = rest.toFixed(2);
+        }
+
+        // اليوزر كتب في Percentage -> هي بقت المصدر، Value بتتحدث للعرض بس
+        percentageInput.addEventListener('input', function() {
+            discountTypeInput.value = '1';
+            const billsTotal = currentBillsTotal();
+            const pct = parseFloat(this.value) || 0;
+            valueDiscountInput.value = (billsTotal * pct / 100).toFixed(2);
+            recalculateOtherDetails(billsTotal);
+        });
+
+        // اليوزر كتب في Value -> هي بقت المصدر، Percentage بتتحدث للعرض بس
+        valueDiscountInput.addEventListener('input', function() {
+            discountTypeInput.value = '0';
+            const billsTotal = currentBillsTotal();
+            const val = parseFloat(this.value) || 0;
+            percentageInput.value = billsTotal > 0 ? (val / billsTotal * 100).toFixed(4) : '0';
+            recalculateOtherDetails(billsTotal);
+        });
+
+        paidUpInput.addEventListener('input', function() {
+            recalculateOtherDetails(currentBillsTotal());
+        });
+
+        // ---------- في حالة رجوع الفورم بعد فشل Validation ----------
+        recalculateAll(); // بيحسب billsTotal وبينادي recalculateOtherDetails بقيم Model الحالية
+
+        // نعيد بناء الحقل "التاني" (اللي مش المصدر) بناءً على Model.DiscountType الحالي عشان يبقى متزامن من أول ما الصفحة تفتح
+        (function initSyncOnLoad() {
+            const billsTotal = currentBillsTotal();
+            if (discountTypeInput.value === '0') {
+                const val = parseFloat(valueDiscountInput.value) || 0;
+                percentageInput.value = billsTotal > 0 ? (val / billsTotal * 100).toFixed(4) : '0';
+            } else {
+                const pct = parseFloat(percentageInput.value) || 0;
+                valueDiscountInput.value = (billsTotal * pct / 100).toFixed(2);
+            }
+        })();
+    </script>
+}

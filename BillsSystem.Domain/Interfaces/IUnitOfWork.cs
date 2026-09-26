@@ -12,6 +12,7 @@ namespace BillsSystem.Domain.Interfaces
         IUnitRepository Units { get; }
         IItemRepository Items { get; }
         IClientRepository Clients { get; }
+        IBillRepository Bills { get; }
 
         Task<int> SaveChangesAsync();
     }

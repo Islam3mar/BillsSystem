@@ -63,7 +63,9 @@
                     <a class="sidebar-link @(currentController == "Clients" ? "active" : "")" asp-controller="Clients" asp-action="Index">
                         <i class="bi bi-people"></i> Clients
                     </a>
-                    <a class="sidebar-link" href="#"><i class="bi bi-sliders2"></i> sales invoice</a>
+                    <a class="sidebar-link @(currentController == "Bills" ? "active" : "")" asp-controller="Bills" asp-action="Index">
+                        <i class="bi bi-sliders2"></i> sales invoice
+                    </a>
                     <a class="sidebar-link" href="#"><i class="bi bi-arrow-repeat"></i> Sales Report</a>
                 </nav>
             </aside>

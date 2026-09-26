@@ -26,6 +26,8 @@ namespace BillsSystem.Infrastructure.Data
         public DbSet<Unit> Units => Set<Unit>();
         public DbSet<Item> Items => Set<Item>();
         public DbSet<Client> Clients => Set<Client>();
+        public DbSet<Bill> Bills => Set<Bill>();
+        public DbSet<BillItem> BillItems => Set<BillItem>();
 
         #endregion
 

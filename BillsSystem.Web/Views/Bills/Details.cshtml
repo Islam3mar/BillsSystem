@@ -1,0 +1,59 @@
+﻿@model BillsSystem.Domain.Entities.Bill
+@using BillsSystem.Domain.Enums
+@{
+    ViewData["Title"] = "Invoice Details";
+}
+
+<div class="form-card">
+    <h4>Sales Invoice #@Model.Id</h4>
+
+    <div class="row mb-3">
+        <div class="col-md-4"><strong>Bill Date:</strong> @Model.BillDate.ToString("yyyy/MM/dd")</div>
+        <div class="col-md-4"><strong>Client:</strong> @Model.Client.Name</div>
+    </div>
+
+    <div class="list-card mb-3">
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr>
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Unit</th>
+                    <th>Quantity</th>
+                    <th>Selling Price</th>
+                    <th>Discount</th>
+                    <th>Total</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Model.Items)
+                {
+                    <tr>
+                        <td>@line.ItemId</td>
+                        <td>@line.Item.Name</td>
+                        <td>@line.Item.Unit.Name</td>
+                        <td>@line.Quantity</td>
+                        <td>@line.SellingPrice.ToString("0.00")</td>
+                        <td>@(line.DiscountType == DiscountType.Percentage ? $"{line.Discount:0.##}%" : line.Discount.ToString("0.00"))</td>
+                        <td>@line.Total.ToString("0.00")</td>
+                        <td>@line.Balance.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3"><strong>Bills Total:</strong> @Model.BillsTotal.ToString("0.00")</div>
+        <div class="col-md-3"><strong>Percentage Discount:</strong> @Model.PercentageDiscount.ToString("0.00")%</div>
+        <div class="col-md-3"><strong>Value Discount:</strong> @Model.ValueDiscount.ToString("0.00")</div>
+        <div class="col-md-3"><strong>The Net:</strong> @Model.TheNet.ToString("0.00")</div>
+        <div class="col-md-3"><strong>Paid Up:</strong> @Model.PaidUp.ToString("0.00")</div>
+        <div class="col-md-3"><strong>The Rest:</strong> @Model.TheRest.ToString("0.00")</div>
+    </div>
+
+    <div class="form-actions mt-3">
+        <a asp-action="Index" class="btn btn-cancel">Back to List</a>
+    </div>
+</div>
