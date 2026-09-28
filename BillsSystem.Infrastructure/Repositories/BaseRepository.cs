@@ -39,6 +39,8 @@ namespace BillsSystem.Infrastructure.Repositories
         public virtual async Task<int> CountAsync(ISpecification<T> spec) =>
             await SpecificationEvaluator<T>.GetQuery(Query.AsNoTracking(), spec, evaluateCriteriaOnly: true).CountAsync();
 
+        public virtual async Task<int> CountAllAsync() => await _dbSet.CountAsync();
+
         public virtual async Task<T?> FirstOrDefaultAsync(ISpecification<T> spec) =>
             await SpecificationEvaluator<T>.GetQuery(Query.AsNoTracking(), spec).FirstOrDefaultAsync();
     }

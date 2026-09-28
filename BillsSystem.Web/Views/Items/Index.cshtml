@@ -27,6 +27,7 @@
                 <th>Unit</th>
                 <th>Selling Price</th>
                 <th>Buying Price</th>
+                <th>Stock</th>
                 <th>Notes</th>
                 <th class="text-center">Actions</th>
             </tr>
@@ -34,7 +35,7 @@
         <tbody>
             @if (!Model.Any())
             {
-                <tr><td colspan="8" class="text-center text-muted py-4">No items added yet</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">No items added yet</td></tr>
             }
             @foreach (var item in Model)
             {
@@ -45,6 +46,7 @@
                     <td>@item.Unit.Name</td>
                     <td>@item.SellingPrice</td>
                     <td>@item.BuyingPrice</td>
+                    <td>@item.QuantityInStock</td>
                     <td>@item.Notes</td>
                     <td class="text-center">
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>

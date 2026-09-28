@@ -11,6 +11,7 @@ namespace BillsSystem.Application.DTOs
         public string Name { get; set; } = string.Empty;
         public decimal SellingPrice { get; set; }
         public decimal BuyingPrice { get; set; }
+        public int QuantityInStock { get; set; }
         public string? Notes { get; set; }
     }
 }

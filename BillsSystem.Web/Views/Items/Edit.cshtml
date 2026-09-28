@@ -67,6 +67,14 @@
         </div>
 
         <div class="form-row">
+            <label asp-for="QuantityInStock"></label>
+            <div class="flex-grow-1">
+                <input asp-for="QuantityInStock" type="number" step="1" min="0" class="form-control" />
+                <span asp-validation-for="QuantityInStock" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
             <label asp-for="Notes"></label>
             <div class="flex-grow-1">
                 <textarea asp-for="Notes" class="form-control" rows="3"></textarea>

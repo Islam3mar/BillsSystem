@@ -1,5 +1,7 @@
 ﻿using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Domain.Common;
+using BillsSystem.Domain.Entities;
 using BillsSystem.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,8 @@ namespace BillsSystem.Web.Controllers
     [Authorize]
     public class BillsController : Controller
     {
+        private const int PageSize = 20;
+
         private readonly IBillService _billService;
         private readonly IClientService _clientService;
         private readonly IItemService _itemService;
@@ -21,10 +25,11 @@ namespace BillsSystem.Web.Controllers
             _itemService = itemService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? search, int page = 1)
         {
-            var bills = await _billService.GetAllAsync();
-            return View(bills);
+            var result = await _billService.GetPagedAsync(search, page, PageSize);
+            ViewBag.Search = search;
+            return View(result);
         }
 
         public async Task<IActionResult> Details(int id)
@@ -37,7 +42,7 @@ namespace BillsSystem.Web.Controllers
         public async Task<IActionResult> Create()
         {
             await PopulateDropdownsAsync();
-            return View(new BillFormViewModel { BillDate = DateTime.Today });
+            return View(new BillFormViewModel { BillDate = AppClock.Today });
         }
 
         [HttpPost]
@@ -46,6 +51,7 @@ namespace BillsSystem.Web.Controllers
         {
             var input = new BillInput
             {
+                SubmissionId = model.SubmissionId,
                 BillDate = model.BillDate ?? default,
                 ClientId = model.ClientId,
                 DiscountType = model.DiscountType,
@@ -72,6 +78,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.PercentageDiscountError != null) ModelState.AddModelError(nameof(model.PercentageDiscount), result.PercentageDiscountError);
                 if (result.PaidUpError != null) ModelState.AddModelError(nameof(model.PaidUp), result.PaidUpError);
                 if (result.ValueDiscountError != null) ModelState.AddModelError(nameof(model.ValueDiscount), result.ValueDiscountError);
+                if (result.GeneralError != null) ModelState.AddModelError(string.Empty, result.GeneralError);
 
                 foreach (var rowError in result.ItemRowErrors)
                 {
@@ -81,13 +88,13 @@ namespace BillsSystem.Web.Controllers
                     if (rowError.DiscountError != null) ModelState.AddModelError($"Items[{rowError.Index}].Discount", rowError.DiscountError);
                 }
 
-                await PopulateDropdownsAsync();
-                await FillItemDisplayNamesAsync(model);
+                var items = await PopulateDropdownsAsync();
+                FillItemDisplayNames(model, items);
                 return View(model);
             }
 
             TempData["SuccessMessage"] = "Sales invoice created successfully";
-            return RedirectToAction(nameof(Details), new { id = result.Bill!.Id });
+            return RedirectToAction(nameof(Details), new { id = result.BillId });
         }
 
         [HttpPost]
@@ -100,7 +107,17 @@ namespace BillsSystem.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ---------- AJAX: بيتنادى لما اليوزر يختار صنف عشان يجيب سعره ووحدته ----------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPayment(int id, decimal amount, DateTime? paymentDate, string? notes)
+        {
+            var (success, error) = await _billService.AddPaymentAsync(id, amount, paymentDate, notes);
+            TempData["SuccessMessage"] = success ? "Payment added successfully" : null;
+            TempData["ErrorMessage"] = success ? null : error;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // ---------- AJAX: بيتنادى لما اليوزر يختار صنف عشان يجيب سعره ووحدته ومخزونه ----------
         [HttpGet]
         public async Task<JsonResult> GetItemDetails(int itemId)
         {
@@ -110,28 +127,40 @@ namespace BillsSystem.Web.Controllers
             return Json(new
             {
                 itemCode = item.Id,
-                itemName = item.Name,
+                itemName = DisplayName(item),
                 unitName = item.Unit.Name,
-                sellingPrice = item.SellingPrice
+                sellingPrice = item.SellingPrice,
+                stock = item.QuantityInStock
             });
         }
 
-        private async Task PopulateDropdownsAsync()
+        // "Company / Type / Item" عشان صنفين بنفس الاسم ميتلخبطوش
+        private static string DisplayName(Item item)
+            => $"{item.ItemType.Company.Name} / {item.ItemType.Name} / {item.Name}";
+
+        private async Task<List<Item>> PopulateDropdownsAsync()
         {
             var clients = await _clientService.GetAllAsync();
             ViewBag.Clients = new SelectList(clients, "Id", "Name");
 
-            var items = await _itemService.GetAllAsync();
-            ViewBag.Items = new SelectList(items, "Id", "Name");
+            var items = (await _itemService.GetAllAsync()).ToList();
+            ViewBag.Items = new SelectList(
+                items.Select(i => new { i.Id, Text = DisplayName(i) }).OrderBy(x => x.Text),
+                "Id", "Text");
+            return items;
         }
 
-        private async Task FillItemDisplayNamesAsync(BillFormViewModel model)
+        // من الـ List اللي اتحمّلت خلاص (مفيش Query لكل صف)
+        private static void FillItemDisplayNames(BillFormViewModel model, List<Item> items)
         {
+            var byId = items.ToDictionary(i => i.Id);
             foreach (var row in model.Items)
             {
-                var item = await _itemService.GetByIdAsync(row.ItemId);
-                row.ItemName = item?.Name;
-                row.UnitName = item?.Unit.Name;
+                if (byId.TryGetValue(row.ItemId, out var item))
+                {
+                    row.ItemName = DisplayName(item);
+                    row.UnitName = item.Unit.Name;
+                }
             }
         }
     }

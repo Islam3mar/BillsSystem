@@ -18,9 +18,9 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.HasIndex(t => new { t.CompanyId, t.Name }).IsUnique();
 
             builder.HasOne(t => t.Company)
-                   .WithMany()
+                   .WithMany(c => c.ItemTypes)
                    .HasForeignKey(t => t.CompanyId)
-                   .OnDelete(DeleteBehavior.Cascade);   // مسح الـ Company يمسح الـ Types التابعة له
+                   .OnDelete(DeleteBehavior.Restrict);   // منع مسح Company لو ليها Types
         }
     }
 }

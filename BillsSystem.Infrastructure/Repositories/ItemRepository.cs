@@ -22,6 +22,15 @@ namespace BillsSystem.Infrastructure.Repositories
                           .Include(i => i.Unit)
                           .FirstOrDefaultAsync(i => i.Id == id);
 
+        public async Task<List<Item>> GetByIdsAsync(IEnumerable<int> ids)
+        {
+            var list = ids.Distinct().ToList();
+            return await Query.Include(i => i.ItemType).ThenInclude(t => t.Company)
+                              .Include(i => i.Unit)
+                              .Where(i => list.Contains(i.Id))
+                              .ToListAsync();
+        }
+
         public async Task<bool> NameExistsInTypeAsync(int itemTypeId, string name, int? excludeId = null)
         {
             var normalized = name.Trim().ToLower();

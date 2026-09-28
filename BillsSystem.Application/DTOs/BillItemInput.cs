@@ -8,7 +8,7 @@ namespace BillsSystem.Application.DTOs
     public class BillItemInput
     {
         public int ItemId { get; set; }
-        public int Quantity { get; set; }
+        public int? Quantity { get; set; }               // null = فاضي → "Quantity is Required"
         public decimal SellingPrice { get; set; }
         public DiscountType DiscountType { get; set; } = DiscountType.Value;
         public decimal Discount { get; set; }

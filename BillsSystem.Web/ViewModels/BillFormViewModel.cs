@@ -3,15 +3,17 @@ using BillsSystem.Domain.Enums;
 
 namespace BillsSystem.Web.ViewModels
 {
+    // القواعد (Required/Range/...) كلها في FluentValidation بس. هنا Display بس.
     public class BillFormViewModel
     {
+        // بيتولّد مرة مع فتح الفورم، فلو اتبعت مرتين السيرفر يعرف إنها نفس الفاتورة
+        public Guid SubmissionId { get; set; } = Guid.NewGuid();
+
         [Display(Name = "BILL DATE")]
-        [Required(ErrorMessage = "BILL DATE is Required")]
         [DataType(DataType.Date)]
         public DateTime? BillDate { get; set; }
 
         [Display(Name = "CLIENT NAME")]
-        [Required(ErrorMessage = "CLIENT NAME is Required")]
         public int ClientId { get; set; }
 
         public List<BillItemRowViewModel> Items { get; set; } = new();
@@ -25,7 +27,6 @@ namespace BillsSystem.Web.ViewModels
         public decimal ValueDiscount { get; set; }
 
         [Display(Name = "PAID UP")]
-        [Range(0, double.MaxValue, ErrorMessage = "Paid Up Must be Greater than or equal Zero")]
         public decimal PaidUp { get; set; }
     }
 }

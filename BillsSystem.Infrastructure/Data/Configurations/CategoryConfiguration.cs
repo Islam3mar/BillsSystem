@@ -20,7 +20,7 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.HasOne(c => c.ItemType)
                    .WithMany(t => t.Categories)
                    .HasForeignKey(c => c.ItemTypeId)
-                   .OnDelete(DeleteBehavior.Cascade);   // مسح الـ Type يمسح الـ Categories التابعة له
+                   .OnDelete(DeleteBehavior.Restrict);   // منع مسح Type لو ليه Categories
         }
     }
 }

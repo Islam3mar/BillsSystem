@@ -23,9 +23,15 @@ namespace BillsSystem.Infrastructure.Specifications
             query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
 
             if (spec.OrderBy != null)
-                query = query.OrderBy(spec.OrderBy);
+            {
+                var ordered = query.OrderBy(spec.OrderBy);
+                query = spec.ThenByDescending != null ? ordered.ThenByDescending(spec.ThenByDescending) : ordered;
+            }
             else if (spec.OrderByDescending != null)
-                query = query.OrderByDescending(spec.OrderByDescending);
+            {
+                var ordered = query.OrderByDescending(spec.OrderByDescending);
+                query = spec.ThenByDescending != null ? ordered.ThenByDescending(spec.ThenByDescending) : ordered;
+            }
 
             if (spec.IsPagingEnabled)
                 query = query.Skip(spec.Skip).Take(spec.Take);

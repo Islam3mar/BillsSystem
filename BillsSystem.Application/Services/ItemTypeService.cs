@@ -43,7 +43,12 @@ namespace BillsSystem.Application.Services
             };
 
             await _unitOfWork.ItemTypes.AddAsync(itemType);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.ItemType = itemType;
@@ -67,7 +72,12 @@ namespace BillsSystem.Application.Services
             itemType.Notes = input.Notes?.Trim();
 
             _unitOfWork.ItemTypes.Update(itemType);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.ItemType = itemType;
@@ -104,6 +114,12 @@ namespace BillsSystem.Application.Services
                     if (error.PropertyName == nameof(input.CompanyId)) result.CompanyError = error.ErrorMessage;
                     if (error.PropertyName == nameof(input.Name)) result.NameError = error.ErrorMessage;
                 }
+                return result;
+            }
+
+            if (await _unitOfWork.Companies.GetByIdAsync(input.CompanyId) == null)
+            {
+                result.CompanyError = "Selected company no longer exists";
                 return result;
             }
 

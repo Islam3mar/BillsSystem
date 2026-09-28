@@ -171,8 +171,8 @@
                         <th>Date</th>
                         <th>Client</th>
                         <th class="text-end">Items</th>
-                        <th class="text-end">Bills Total</th>
-                        <th class="text-end">Discount</th>
+                        <th class="text-end">Total (Before Discount)</th>
+                        <th class="text-end">Discounts</th>
                         <th class="text-end">The Net</th>
                         <th class="text-end">Paid Up</th>
                         <th class="text-end">The Rest</th>
@@ -191,8 +191,8 @@
                             <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
                             <td>@bill.ClientName</td>
                             <td class="text-end">@bill.ItemsCount</td>
-                            <td class="text-end">@bill.BillsTotal.ToString("0.00")</td>
-                            <td class="text-end">@bill.ValueDiscount.ToString("0.00")</td>
+                            <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
+                            <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
                             <td class="text-end">@bill.TheNet.ToString("0.00")</td>
                             <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
                             <td class="text-end">@bill.TheRest.ToString("0.00")</td>

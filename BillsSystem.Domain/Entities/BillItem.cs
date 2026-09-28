@@ -15,16 +15,21 @@ namespace BillsSystem.Domain.Entities
         public Item Item { get; set; } = null!;
 
         public int Quantity { get; set; }
-        public decimal SellingPrice { get; set; }          // نسخة من سعر البيع وقت البيع (قابل للتعديل قبل الإضافة)
+        public decimal SellingPrice { get; set; }
 
         public DiscountType DiscountType { get; set; } = DiscountType.Value;
-        public decimal Discount { get; set; }               // Value: مبلغ مباشر / Percentage: نسبة من 0 لـ 100
+        public decimal Discount { get; set; }            // زي ما اتكتب: مبلغ أو نسبة
 
-        // خصائص محسوبة، مش متخزنة (Ignored في الـ Configuration)
-        public decimal Total => SellingPrice * Quantity;
+        // كلهم بيتحسبوا مرة واحدة وقت الحفظ (BillService) وبيتخزنوا
+        public decimal Total { get; set; }               // SellingPrice * Quantity
+        public decimal DiscountAmount { get; set; }      // قيمة الخصم بالمبلغ (حتى لو الخصم نسبة)
+        public decimal Balance { get; set; }             // Total - DiscountAmount
 
-        public decimal Balance => DiscountType == DiscountType.Percentage
-            ? Total - (Total * Discount / 100m)
-            : Total - Discount;
+        // ---------- Snapshot: نسخة من بيانات الصنف وقت البيع ----------
+        public string ItemName { get; set; } = null!;
+        public string TypeName { get; set; } = null!;
+        public string CompanyName { get; set; } = null!;
+        public string UnitName { get; set; } = null!;
+        public decimal BuyingPrice { get; set; }
     }
 }

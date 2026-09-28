@@ -17,6 +17,7 @@ namespace BillsSystem.Application.DTOs
     public class BillResult
     {
         public bool Success { get; set; }
+        public int? BillId { get; set; }
         public Bill? Bill { get; set; }
 
         public string? BillDateError { get; set; }
@@ -25,14 +26,13 @@ namespace BillsSystem.Application.DTOs
         public string? PercentageDiscountError { get; set; }
         public string? PaidUpError { get; set; }
         public string? ValueDiscountError { get; set; }
-
+        public string? GeneralError { get; set; }
 
         public List<BillItemRowError> ItemRowErrors { get; set; } = new();
 
-        // وضيفه في HasErrors كمان:
         public bool HasErrors =>
             BillDateError != null || ClientError != null || ItemsError != null ||
             PercentageDiscountError != null || ValueDiscountError != null || PaidUpError != null ||
-            ItemRowErrors.Any();
+            GeneralError != null || ItemRowErrors.Any();
     }
 }

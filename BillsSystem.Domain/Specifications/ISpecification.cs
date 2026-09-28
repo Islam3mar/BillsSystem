@@ -6,9 +6,7 @@ using BillsSystem.Domain.Common;
 
 namespace BillsSystem.Domain.Specifications
 {
-    // العقد العام لأي Specification: بيوصف "عايزين إيه" (شرط + Includes + ترتيب + صفحات)
     // القاعدة: أي Query بترجع List أو Paged Result بيتعمله Specification.
-    // أي Query بترجع bool (Exists) أو Entity واحد بشرط بسيط، بيفضل LINQ مباشر جوه الـ Repository.
     public interface ISpecification<T> where T : BaseEntity
     {
         Expression<Func<T, bool>>? Criteria { get; }
@@ -18,6 +16,7 @@ namespace BillsSystem.Domain.Specifications
 
         Expression<Func<T, object>>? OrderBy { get; }
         Expression<Func<T, object>>? OrderByDescending { get; }
+        Expression<Func<T, object>>? ThenByDescending { get; }
 
         int Skip { get; }
         int Take { get; }

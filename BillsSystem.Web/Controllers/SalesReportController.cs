@@ -1,5 +1,6 @@
 ﻿using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Domain.Common;
 using BillsSystem.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,8 +21,8 @@ namespace BillsSystem.Web.Controllers
         public async Task<IActionResult> Index(SalesReportFilterViewModel filter)
         {
             // افتراضي: الشهر الحالي (أول يوم لحد النهاردة) لو المستخدم لسه ما فلترش
-            filter.FromDate ??= new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-            filter.ToDate ??= DateTime.Today;
+            filter.FromDate ??= new DateTime(AppClock.Today.Year, AppClock.Today.Month, 1);
+            filter.ToDate ??= AppClock.Today;
 
             var input = new SalesReportFilter
             {

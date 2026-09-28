@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Interfaces;
 using BillsSystem.Domain.Specifications;
 using FluentValidation;
@@ -38,65 +39,56 @@ namespace BillsSystem.Application.Services
                 return result;
             }
 
-            var spec = new BillsInDateRangeSpecification(filter.FromDate, filter.ToDate);
-            var bills = (await _unitOfWork.Bills.ListAsync(spec)).ToList();
+            var from = filter.FromDate.Date;
+            var to = filter.ToDate.Date;
+
+            // كله بيتحسب في SQL
+            var totals = await _unitOfWork.Bills.GetSalesTotalsAsync(from, to);
+            var bills = await _unitOfWork.Bills.GetBillSummariesAsync(from, to);
+            var topItems = await _unitOfWork.Bills.GetTopItemsAsync(from, to, 5);
+            var topClients = await _unitOfWork.Bills.GetTopClientsAsync(from, to, 5);
 
             var report = new SalesReportResult
             {
-                FromDate = filter.FromDate.Date,
-                ToDate = filter.ToDate.Date,
-                BillsCount = bills.Count,
-                TotalBillsAmount = bills.Sum(b => b.BillsTotal),
-                TotalDiscounts = bills.Sum(b => b.ValueDiscount),
-                TotalNetSales = bills.Sum(b => b.TheNet),
-                TotalCollected = bills.Sum(b => b.PaidUp),
-                TotalOutstanding = bills.Sum(b => b.TheRest)
-            };
+                FromDate = from,
+                ToDate = to,
+                BillsCount = totals.BillsCount,
+                TotalBillsAmount = totals.GrossTotal,
+                TotalDiscounts = totals.TotalDiscounts,        // خصم الأصناف + خصم الفاتورة
+                TotalNetSales = totals.Net,
+                TotalCollected = totals.Collected,
+                TotalOutstanding = totals.Outstanding,
+                AverageBillValue = totals.BillsCount > 0 ? Money.Round(totals.Net / totals.BillsCount) : 0,
 
-            report.AverageBillValue = report.BillsCount > 0
-                ? report.TotalNetSales / report.BillsCount
-                : 0;
-
-            report.Bills = bills
-                .OrderByDescending(b => b.BillDate).ThenByDescending(b => b.Id)
-                .Select(b => new BillSummaryDto
+                Bills = bills.Select(b => new BillSummaryDto
                 {
                     Id = b.Id,
                     BillDate = b.BillDate,
-                    ClientName = b.Client.Name,
-                    ItemsCount = b.Items.Count,
-                    BillsTotal = b.BillsTotal,
-                    ValueDiscount = b.ValueDiscount,
+                    ClientName = b.ClientName,
+                    ItemsCount = b.ItemsCount,
+                    GrossTotal = b.GrossTotal,
+                    TotalDiscount = b.TotalDiscount,
                     TheNet = b.TheNet,
                     PaidUp = b.PaidUp,
                     TheRest = b.TheRest
-                }).ToList();
+                }).ToList(),
 
-            report.TopSellingItems = bills
-                .SelectMany(b => b.Items)
-                .GroupBy(i => new { i.ItemId, i.Item.Name, UnitName = i.Item.Unit.Name })
-                .Select(g => new ItemSalesDto
+                // الاتنين (Top Items و Top Clients) بيطرحوا خصم الفاتورة العام بنفس القاعدة
+                TopSellingItems = topItems.Select(i => new ItemSalesDto
                 {
-                    ItemName = g.Key.Name,
-                    UnitName = g.Key.UnitName,
-                    QuantitySold = g.Sum(i => i.Quantity),
-                    TotalRevenue = g.Sum(i => i.Balance)
-                })
-                .OrderByDescending(x => x.TotalRevenue)
-                .Take(5)
-                .ToList();
+                    ItemName = i.ItemName,
+                    UnitName = i.UnitName,
+                    QuantitySold = i.QuantitySold,
+                    TotalRevenue = Money.Round(i.Revenue)
+                }).ToList(),
 
-            report.TopClients = bills
-                .GroupBy(b => new { b.ClientId, b.Client.Name })
-                .Select(g => new ClientSalesDto
+                TopClients = topClients.Select(c => new ClientSalesDto
                 {
-                    ClientName = g.Key.Name,
-                    BillsCount = g.Count(),
-                    TotalNet = g.Sum(b => b.TheNet)
-                })
-                .OrderByDescending(x => x.TotalNet)
-                .Take(5)
-                .ToList();
+                    ClientName = c.ClientName,
+                    BillsCount = c.BillsCount,
+                    TotalNet = c.TotalNet
+                }).ToList()
+            };
 
             result.Success = true;
             result.Report = report;

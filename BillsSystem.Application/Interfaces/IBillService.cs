@@ -8,9 +8,10 @@ namespace BillsSystem.Application.Interfaces
 {
     public interface IBillService
     {
-        Task<IEnumerable<Bill>> GetAllAsync();
+        Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize);
         Task<Bill?> GetByIdAsync(int id);
         Task<BillResult> CreateAsync(BillInput input);
-        Task<(bool Success, string? Error)> DeleteAsync(int id);
+        Task<(bool Success, string? Error)> DeleteAsync(int id);        // Soft delete + إرجاع المخزون
+        Task<(bool Success, string? Error)> AddPaymentAsync(int billId, decimal amount, DateTime? paymentDate, string? notes);
     }
 }

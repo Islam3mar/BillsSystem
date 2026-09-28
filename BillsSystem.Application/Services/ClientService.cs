@@ -40,7 +40,12 @@ namespace BillsSystem.Application.Services
             };
 
             await _unitOfWork.Clients.AddAsync(client);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Client = client;
@@ -64,7 +69,12 @@ namespace BillsSystem.Application.Services
             client.Address = input.Address.Trim();
 
             _unitOfWork.Clients.Update(client);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Client = client;

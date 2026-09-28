@@ -1,11 +1,21 @@
 ﻿@model BillsSystem.Domain.Entities.Bill
 @using BillsSystem.Domain.Enums
+@using BillsSystem.Domain.Common
 @{
     ViewData["Title"] = "Invoice Details";
 }
 
 <div class="form-card">
     <h4>Sales Invoice #@Model.Id</h4>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
 
     <div class="row mb-3">
         <div class="col-md-4"><strong>Bill Date:</strong> @Model.BillDate.ToString("yyyy/MM/dd")</div>
@@ -31,11 +41,18 @@
                 {
                     <tr>
                         <td>@line.ItemId</td>
-                        <td>@line.Item.Name</td>
-                        <td>@line.Item.Unit.Name</td>
+                        <td>
+                            @line.ItemName
+                            <div class="small text-muted">@line.CompanyName / @line.TypeName</div>
+                        </td>
+                        <td>@line.UnitName</td>
                         <td>@line.Quantity</td>
                         <td>@line.SellingPrice.ToString("0.00")</td>
-                        <td>@(line.DiscountType == DiscountType.Percentage ? $"{line.Discount:0.##}%" : line.Discount.ToString("0.00"))</td>
+                        <td>
+                            @(line.DiscountType == DiscountType.Percentage
+                                ? $"{line.Discount:0.##}% ({line.DiscountAmount:0.00})"
+                                : line.DiscountAmount.ToString("0.00"))
+                        </td>
                         <td>@line.Total.ToString("0.00")</td>
                         <td>@line.Balance.ToString("0.00")</td>
                     </tr>
@@ -46,12 +63,68 @@
 
     <div class="row">
         <div class="col-md-3"><strong>Bills Total:</strong> @Model.BillsTotal.ToString("0.00")</div>
-        <div class="col-md-3"><strong>Percentage Discount:</strong> @Model.PercentageDiscount.ToString("0.00")%</div>
+        <div class="col-md-3"><strong>Percentage Discount:</strong> @Model.PercentageDiscount.ToString("0.####")%</div>
         <div class="col-md-3"><strong>Value Discount:</strong> @Model.ValueDiscount.ToString("0.00")</div>
         <div class="col-md-3"><strong>The Net:</strong> @Model.TheNet.ToString("0.00")</div>
         <div class="col-md-3"><strong>Paid Up:</strong> @Model.PaidUp.ToString("0.00")</div>
         <div class="col-md-3"><strong>The Rest:</strong> @Model.TheRest.ToString("0.00")</div>
     </div>
+
+    <hr />
+    <h6>Payments</h6>
+    <div class="list-card mb-3">
+        <table class="table table-bordered mb-0">
+            <thead>
+                <tr><th>Date</th><th>Amount</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+                @if (!Model.Payments.Any())
+                {
+                    <tr><td colspan="3" class="text-center text-muted py-3">No payments yet</td></tr>
+                }
+                @foreach (var p in Model.Payments.OrderBy(p => p.PaymentDate).ThenBy(p => p.Id))
+                {
+                    <tr>
+                        <td>@p.PaymentDate.ToString("yyyy/MM/dd")</td>
+                        <td>@p.Amount.ToString("0.00")</td>
+                        <td>@p.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TheRest > 0)
+    {
+        <form asp-action="AddPayment" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end" id="paymentForm">
+            @Html.AntiForgeryToken()
+            <div class="col-auto">
+                <label class="form-label small text-muted">AMOUNT (max @Model.TheRest.ToString("0.00"))</label>
+                <input name="amount" type="number" step="0.01" min="0.01" max="@Model.TheRest.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" required />
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted">DATE</label>
+                <input name="paymentDate" type="date" value="@AppClock.Today.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-auto">
+                <label class="form-label small text-muted">NOTES</label>
+                <input name="notes" maxlength="200" class="form-control" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-save"><i class="bi bi-cash-coin"></i> Add Payment</button>
+            </div>
+        </form>
+        <script>
+                // منع الضغط المزدوج على Add Payment
+                document.getElementById('paymentForm').addEventListener('submit', function() {
+                    this.querySelector('button[type=submit]').disabled = true;
+                });
+        </script>
+    }
+    else
+    {
+        <div class="text-success"><i class="bi bi-check-circle"></i> Fully paid</div>
+    }
 
     <div class="form-actions mt-3">
         <a asp-action="Index" class="btn btn-cancel">Back to List</a>

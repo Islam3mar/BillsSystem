@@ -20,7 +20,8 @@ namespace BillsSystem.Application.Validators
                 .GreaterThan(0).WithMessage("CLIENT NAME is Required");
 
             RuleFor(x => x.Items)
-                .NotEmpty().WithMessage("You must add at least one item to the bill");
+                .NotEmpty().WithMessage("You must add at least one item to the bill")
+                .Must(i => i.Count <= 200).WithMessage("A bill can't have more than 200 lines");
 
             RuleForEach(x => x.Items).SetValidator(new BillItemInputValidator());
 

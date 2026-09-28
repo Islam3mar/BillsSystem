@@ -40,7 +40,12 @@ namespace BillsSystem.Application.Services
             };
 
             await _unitOfWork.Categories.AddAsync(category);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Category = category;
@@ -64,7 +69,12 @@ namespace BillsSystem.Application.Services
             category.Notes = input.Notes?.Trim();
 
             _unitOfWork.Categories.Update(category);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Category = category;
@@ -101,6 +111,12 @@ namespace BillsSystem.Application.Services
                     if (error.PropertyName == nameof(input.ItemTypeId)) result.TypeError = error.ErrorMessage;
                     if (error.PropertyName == nameof(input.Name)) result.NameError = error.ErrorMessage;
                 }
+                return result;
+            }
+
+            if (await _unitOfWork.ItemTypes.GetByIdAsync(input.ItemTypeId) == null)
+            {
+                result.TypeError = "Selected type no longer exists";
                 return result;
             }
 

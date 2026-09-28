@@ -17,6 +17,7 @@ namespace BillsSystem.Domain.Interfaces
 
         Task<IEnumerable<T>> ListAsync(ISpecification<T> spec);
         Task<int> CountAsync(ISpecification<T> spec);
+        Task<int> CountAllAsync();
         Task<T?> FirstOrDefaultAsync(ISpecification<T> spec);
     }
 }

@@ -12,14 +12,11 @@ namespace BillsSystem.Infrastructure.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        #region Catch All Configurations
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
-        #endregion
 
-        #region DbSets
         public DbSet<Company> Companies => Set<Company>();
         public DbSet<ItemType> ItemTypes => Set<ItemType>();
         public DbSet<Category> Categories => Set<Category>();
@@ -28,13 +25,11 @@ namespace BillsSystem.Infrastructure.Data
         public DbSet<Client> Clients => Set<Client>();
         public DbSet<Bill> Bills => Set<Bill>();
         public DbSet<BillItem> BillItems => Set<BillItem>();
+        public DbSet<Payment> Payments => Set<Payment>();
 
-        #endregion
-
-        #region Override SaveChangesAsync to set CreatedAt and UpdatedAt
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var now = DateTime.Now;
+            var now = AppClock.Now;   // توقيت مصر مش توقيت السيرفر
 
             foreach (var entry in ChangeTracker.Entries<BaseEntity>())
             {
@@ -46,6 +41,5 @@ namespace BillsSystem.Infrastructure.Data
 
             return await base.SaveChangesAsync(cancellationToken);
         }
-        #endregion
     }
 }

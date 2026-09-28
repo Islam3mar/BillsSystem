@@ -15,14 +15,25 @@ namespace BillsSystem.Domain.Entities
 
         public decimal BillsTotal { get; set; }
 
-        public DiscountType DiscountType { get; set; }       // <-- جديد: أنهي حقل كان هو المصدر
-        public decimal PercentageDiscount { get; set; }      // مخزّنة دايمًا للعرض (سواء مصدر أو محسوبة)
-        public decimal ValueDiscount { get; set; }            // مخزّنة دايمًا للعرض (سواء مصدر أو محسوبة)
+        public DiscountType DiscountType { get; set; }
+        public decimal PercentageDiscount { get; set; }
+        public decimal ValueDiscount { get; set; }
 
         public decimal TheNet { get; set; }
-        public decimal PaidUp { get; set; }
-        public decimal TheRest { get; set; }
+        public decimal PaidUp { get; set; }      // = مجموع Payments (بيتحدث مع كل دفعة)
+        public decimal TheRest { get; set; }     // = TheNet - PaidUp
+
+        // Soft delete: الفاتورة بتفضل في الداتابيز بس بتختفي من كل الشاشات والتقارير
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        // بيمنع إن نفس الفورم يتسجل مرتين (Double-submit)
+        public Guid? SubmissionId { get; set; }
+
+        // بيمنع تعديلين في نفس اللحظة على نفس الفاتورة (مثلاً دفعتين متزامنتين)
+        public byte[] RowVersion { get; set; } = null!;
 
         public ICollection<BillItem> Items { get; set; } = new List<BillItem>();
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

@@ -51,6 +51,7 @@ namespace BillsSystem.Web.Controllers
                 Name = model.Name,
                 SellingPrice = model.SellingPrice,
                 BuyingPrice = model.BuyingPrice,
+                QuantityInStock = model.QuantityInStock,
                 Notes = model.Notes
             });
 
@@ -61,6 +62,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.NameError != null) ModelState.AddModelError(nameof(model.Name), result.NameError);
                 if (result.SellingPriceError != null) ModelState.AddModelError(nameof(model.SellingPrice), result.SellingPriceError);
                 if (result.BuyingPriceError != null) ModelState.AddModelError(nameof(model.BuyingPrice), result.BuyingPriceError);
+                if (result.StockError != null) ModelState.AddModelError(nameof(model.QuantityInStock), result.StockError);
 
                 await PopulateCompaniesAsync(model.CompanyId);
                 await PopulateTypesAsync(model.CompanyId, model.ItemTypeId);
@@ -86,6 +88,7 @@ namespace BillsSystem.Web.Controllers
                 Name = item.Name,
                 SellingPrice = item.SellingPrice,
                 BuyingPrice = item.BuyingPrice,
+                QuantityInStock = item.QuantityInStock,
                 Notes = item.Notes
             };
 
@@ -106,6 +109,7 @@ namespace BillsSystem.Web.Controllers
                 Name = model.Name,
                 SellingPrice = model.SellingPrice,
                 BuyingPrice = model.BuyingPrice,
+                QuantityInStock = model.QuantityInStock,
                 Notes = model.Notes
             });
 
@@ -116,6 +120,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.NameError != null) ModelState.AddModelError(nameof(model.Name), result.NameError);
                 if (result.SellingPriceError != null) ModelState.AddModelError(nameof(model.SellingPrice), result.SellingPriceError);
                 if (result.BuyingPriceError != null) ModelState.AddModelError(nameof(model.BuyingPrice), result.BuyingPriceError);
+                if (result.StockError != null) ModelState.AddModelError(nameof(model.QuantityInStock), result.StockError);
 
                 await PopulateCompaniesAsync(model.CompanyId);
                 await PopulateTypesAsync(model.CompanyId, model.ItemTypeId);

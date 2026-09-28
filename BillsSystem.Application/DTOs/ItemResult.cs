@@ -15,9 +15,10 @@ namespace BillsSystem.Application.DTOs
         public string? NameError { get; set; }
         public string? SellingPriceError { get; set; }
         public string? BuyingPriceError { get; set; }
+        public string? StockError { get; set; }
 
         public bool HasErrors =>
             TypeError != null || UnitError != null || NameError != null ||
-            SellingPriceError != null || BuyingPriceError != null;
+            SellingPriceError != null || BuyingPriceError != null || StockError != null;
     }
 }

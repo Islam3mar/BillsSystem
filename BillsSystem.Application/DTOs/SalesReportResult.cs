@@ -10,8 +10,8 @@ namespace BillsSystem.Application.DTOs
         public DateTime BillDate { get; set; }
         public string ClientName { get; set; } = null!;
         public int ItemsCount { get; set; }
-        public decimal BillsTotal { get; set; }
-        public decimal ValueDiscount { get; set; }
+        public decimal GrossTotal { get; set; }         // قبل أي خصم (أصناف + فاتورة)
+        public decimal TotalDiscount { get; set; }      // خصم الأصناف + خصم الفاتورة
         public decimal TheNet { get; set; }
         public decimal PaidUp { get; set; }
         public decimal TheRest { get; set; }
@@ -38,8 +38,8 @@ namespace BillsSystem.Application.DTOs
         public DateTime ToDate { get; set; }
 
         public int BillsCount { get; set; }
-        public decimal TotalBillsAmount { get; set; }   // مجموع BillsTotal قبل الخصم العام
-        public decimal TotalDiscounts { get; set; }       // مجموع ValueDiscount
+        public decimal TotalBillsAmount { get; set; }   // مجموع Total الأصناف قبل أي خصم
+        public decimal TotalDiscounts { get; set; }       // خصم الأصناف + خصم الفاتورة
         public decimal TotalNetSales { get; set; }        // مجموع TheNet
         public decimal TotalCollected { get; set; }       // مجموع PaidUp
         public decimal TotalOutstanding { get; set; }     // مجموع TheRest (ديون على العملاء)

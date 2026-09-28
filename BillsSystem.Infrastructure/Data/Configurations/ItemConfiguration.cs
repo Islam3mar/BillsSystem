@@ -17,7 +17,8 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(i => i.SellingPrice).HasColumnType("decimal(18,2)");
             builder.Property(i => i.BuyingPrice).HasColumnType("decimal(18,2)");
 
-            // اسم الـ Item يبقى Unique بس جوا نفس الـ Type
+            builder.Property(i => i.RowVersion).IsRowVersion();   // حماية المخزون من عمليتين متزامنتين
+
             builder.HasIndex(i => new { i.ItemTypeId, i.Name }).IsUnique();
 
             builder.HasOne(i => i.ItemType)

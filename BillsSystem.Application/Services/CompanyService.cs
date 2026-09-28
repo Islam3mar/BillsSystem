@@ -39,7 +39,12 @@ namespace BillsSystem.Application.Services
             };
 
             await _unitOfWork.Companies.AddAsync(company);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Company = company;
@@ -62,7 +67,12 @@ namespace BillsSystem.Application.Services
             company.Notes = input.Notes?.Trim();
 
             _unitOfWork.Companies.Update(company);
-            await _unitOfWork.SaveChangesAsync();
+            try { await _unitOfWork.SaveChangesAsync(); }
+            catch (DbUpdateException)
+            {
+                result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
+                return result;
+            }
 
             result.Success = true;
             result.Company = company;

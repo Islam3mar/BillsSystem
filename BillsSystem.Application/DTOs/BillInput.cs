@@ -7,12 +7,14 @@ namespace BillsSystem.Application.DTOs
 {
     public class BillInput
     {
+        public Guid? SubmissionId { get; set; }          // بيمنع تكرار نفس الفورم (Double-submit)
+
         public DateTime BillDate { get; set; }
         public int ClientId { get; set; }
 
         public DiscountType DiscountType { get; set; } = DiscountType.Percentage;
-        public decimal PercentageDiscount { get; set; }   // يُستخدم فقط لو DiscountType == Percentage
-        public decimal ValueDiscount { get; set; }         // يُستخدم فقط لو DiscountType == Value
+        public decimal PercentageDiscount { get; set; }
+        public decimal ValueDiscount { get; set; }
 
         public decimal PaidUp { get; set; }
         public List<BillItemInput> Items { get; set; } = new();
