@@ -39,5 +39,7 @@ namespace BillsSystem.Infrastructure.Repositories
                 i.Name.ToLower() == normalized &&
                 (!excludeId.HasValue || i.Id != excludeId.Value));
         }
+        public void SetOriginalRowVersion(Item item, byte[] rowVersion)
+    => _context.Entry(item).Property(i => i.RowVersion).OriginalValue = rowVersion;
     }
 }

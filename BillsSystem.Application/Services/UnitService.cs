@@ -7,6 +7,7 @@ using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -14,11 +15,13 @@ namespace BillsSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<UnitInput> _validator;
+        private readonly ILogger<UnitService> _logger;
 
-        public UnitService(IUnitOfWork unitOfWork, IValidator<UnitInput> validator)
+        public UnitService(IUnitOfWork unitOfWork, IValidator<UnitInput> validator, ILogger<UnitService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Unit>> GetAllUnitsAsync()
@@ -40,8 +43,9 @@ namespace BillsSystem.Application.Services
 
             await _unitOfWork.Units.AddAsync(unit);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to create unit {Name}", input.Name);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -66,10 +70,10 @@ namespace BillsSystem.Application.Services
             unit.Name = input.Name.Trim();
             unit.Notes = input.Notes?.Trim();
 
-            _unitOfWork.Units.Update(unit);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to update unit {Id}", id);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -91,8 +95,9 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete unit {Id}", id);
                 return (false, "This unit can't be deleted because it has related data linked to it");
             }
         }

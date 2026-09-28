@@ -26,11 +26,6 @@ namespace BillsSystem.Application
 
             services.AddValidatorsFromAssemblyContaining<CompanyInputValidator>();
 
-            services.AddAutoMapper(cfg =>
-            {
-                cfg.AddMaps(typeof(ApplicationServicesRegistrations).Assembly);
-            });
-
             return services;
         }
     }

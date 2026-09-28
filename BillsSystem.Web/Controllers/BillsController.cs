@@ -6,6 +6,7 @@ using BillsSystem.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using BillsSystem.Web.Extensions;
 
 namespace BillsSystem.Web.Controllers
 {
@@ -39,6 +40,7 @@ namespace BillsSystem.Web.Controllers
             return View(bill);
         }
 
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Create()
         {
             await PopulateDropdownsAsync();
@@ -49,6 +51,15 @@ namespace BillsSystem.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BillFormViewModel model)
         {
+            if (ModelState.HasRealBindingErrors())
+            {
+                ModelState.AddModelError(string.Empty, "Some values are invalid. Please check the numbers you entered");
+                var its = await PopulateDropdownsAsync();
+                FillItemDisplayNames(model, its);
+                return View(model);
+            }
+
+
             var input = new BillInput
             {
                 SubmissionId = model.SubmissionId,
@@ -93,7 +104,9 @@ namespace BillsSystem.Web.Controllers
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = "Sales invoice created successfully";
+            TempData["SuccessMessage"] = result.AlreadySaved
+                ? "This invoice was already saved. Your latest changes were NOT applied"
+                : "Sales invoice created successfully";
             return RedirectToAction(nameof(Details), new { id = result.BillId });
         }
 
@@ -113,6 +126,16 @@ namespace BillsSystem.Web.Controllers
         {
             var (success, error) = await _billService.AddPaymentAsync(id, amount, paymentDate, notes);
             TempData["SuccessMessage"] = success ? "Payment added successfully" : null;
+            TempData["ErrorMessage"] = success ? null : error;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VoidPayment(int id, int paymentId, string? reason)
+        {
+            var (success, error) = await _billService.VoidPaymentAsync(id, paymentId, reason);
+            TempData["SuccessMessage"] = success ? "Payment voided successfully" : null;
             TempData["ErrorMessage"] = success ? null : error;
             return RedirectToAction(nameof(Details), new { id });
         }

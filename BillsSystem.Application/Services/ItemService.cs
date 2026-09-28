@@ -8,6 +8,7 @@ using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -16,10 +17,13 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<ItemInput> _validator;
 
-        public ItemService(IUnitOfWork unitOfWork, IValidator<ItemInput> validator)
+        private readonly ILogger<ItemService> _logger;
+
+        public ItemService(IUnitOfWork unitOfWork, IValidator<ItemInput> validator, ILogger<ItemService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Item>> GetAllAsync()
@@ -47,8 +51,9 @@ namespace BillsSystem.Application.Services
             await _unitOfWork.Items.AddAsync(item);
 
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to create item {Name}", input.Name);
                 result.NameError = "Couldn't save. The name may already exist, or the selected type/unit was removed";
                 return result;
             }
@@ -70,6 +75,15 @@ namespace BillsSystem.Application.Services
                 return result;
             }
 
+            // الـ RowVersion اللي اليوزر شافه وهو فاتح الصفحة، مش الحالي من الداتابيز.
+            // لو المخزون اتغير بعد كده (بيع مثلاً) الـ UPDATE هيفشل بدل ما يمسح التغيير.
+            if (input.RowVersion == null)
+            {
+                result.NameError = "This form is outdated. Reload the page and try again";
+                return result;
+            }
+            _unitOfWork.Items.SetOriginalRowVersion(item, input.RowVersion);
+
             item.ItemTypeId = input.ItemTypeId;
             item.UnitId = input.UnitId;
             item.Name = input.Name.Trim();
@@ -78,17 +92,16 @@ namespace BillsSystem.Application.Services
             item.QuantityInStock = input.QuantityInStock;
             item.Notes = input.Notes?.Trim();
 
-            // مفيش _unitOfWork.Items.Update(item) هنا: الـ Entity متتبّع أصلًا، و Update() كانت
-            // بتعلّم ItemType و Company و Unit (المحمّلين بالـ Include) كـ Modified وبتغيّر UpdatedAt بتاعهم
-
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
-                result.NameError = "This item was changed by someone else. Reload and try again";
+                _logger.LogWarning(ex, "Concurrency conflict while updating item {ItemId}", id);
+                result.NameError = "This item was changed by someone else (for example a sale). Reload and try again";
                 return result;
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to update item {ItemId}", id);
                 result.NameError = "Couldn't save. The name may already exist, or the selected type/unit was removed";
                 return result;
             }
@@ -110,8 +123,9 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete item {Id}", id);
                 return (false, "This item can't be deleted because it has related data linked to it");
             }
         }

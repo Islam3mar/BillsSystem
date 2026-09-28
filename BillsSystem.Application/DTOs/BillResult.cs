@@ -18,6 +18,7 @@ namespace BillsSystem.Application.DTOs
     {
         public bool Success { get; set; }
         public int? BillId { get; set; }
+        public bool AlreadySaved { get; set; }
         public Bill? Bill { get; set; }
 
         public string? BillDateError { get; set; }

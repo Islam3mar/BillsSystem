@@ -7,6 +7,7 @@ using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -14,11 +15,13 @@ namespace BillsSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<CategoryInput> _validator;
+        private readonly ILogger<CategoryService> _logger;
 
-        public CategoryService(IUnitOfWork unitOfWork, IValidator<CategoryInput> validator)
+        public CategoryService(IUnitOfWork unitOfWork, IValidator<CategoryInput> validator, ILogger<CategoryService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync()
@@ -41,8 +44,9 @@ namespace BillsSystem.Application.Services
 
             await _unitOfWork.Categories.AddAsync(category);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to create category {Name}", input.Name);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -68,10 +72,10 @@ namespace BillsSystem.Application.Services
             category.Name = input.Name.Trim();
             category.Notes = input.Notes?.Trim();
 
-            _unitOfWork.Categories.Update(category);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to update category {Id}", id);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -93,8 +97,9 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete category {Id}", id);
                 return (false, "This category can't be deleted because it has related data linked to it");
             }
         }

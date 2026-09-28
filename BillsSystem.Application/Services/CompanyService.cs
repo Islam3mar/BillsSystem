@@ -7,6 +7,7 @@ using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -14,11 +15,13 @@ namespace BillsSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<CompanyInput> _validator;
+        private readonly ILogger<CompanyService> _logger;
 
-        public CompanyService(IUnitOfWork unitOfWork, IValidator<CompanyInput> validator)
+        public CompanyService(IUnitOfWork unitOfWork, IValidator<CompanyInput> validator, ILogger<CompanyService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Company>> GetAllCompaniesAsync()
@@ -40,8 +43,9 @@ namespace BillsSystem.Application.Services
 
             await _unitOfWork.Companies.AddAsync(company);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to create company {Name}", input.Name);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -66,10 +70,10 @@ namespace BillsSystem.Application.Services
             company.Name = input.Name.Trim();
             company.Notes = input.Notes?.Trim();
 
-            _unitOfWork.Companies.Update(company);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to update company {Id}", id);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -91,8 +95,9 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete company {Id}", id);
                 // هيحصل لو الشركة مرتبطة بـ Types أو Items بعدين
                 return (false, "This company can't be deleted because it has related data linked to it");
             }

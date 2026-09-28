@@ -29,5 +29,8 @@ namespace BillsSystem.Web.ViewModels
 
         [Display(Name = "NOTES")]
         public string? Notes { get; set; }
+
+
+        public byte[]? RowVersion { get; set; }
     }
 }

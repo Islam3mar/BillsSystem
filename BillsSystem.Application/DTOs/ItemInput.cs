@@ -13,5 +13,7 @@ namespace BillsSystem.Application.DTOs
         public decimal BuyingPrice { get; set; }
         public int QuantityInStock { get; set; }
         public string? Notes { get; set; }
+
+        public byte[]? RowVersion { get; set; }
     }
 }

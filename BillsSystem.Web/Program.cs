@@ -1,12 +1,20 @@
+using System.Globalization;
 using System.Threading.RateLimiting;
 using BillsSystem.Application;
+using BillsSystem.Domain.Common;
 using BillsSystem.Infrastructure;
 using BillsSystem.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // FluentValidation هو مصدر الحقيقة، فمنع MVC من اعتبار أي string غير Nullable "Required" بالافتراضي
+    options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+});
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -31,9 +39,24 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
+// ورا Nginx / IIS / Azure / Docker: من غير ده كل المستخدمين بيبانوا بنفس الـ IP (IP الـ Proxy)
+// فالـ Rate Limiter هيحسبهم كلهم كواحد
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
 var app = builder.Build();
 
-await app.MigrationAndSeedAsync();
+// لو المنطقة الزمنية مش موجودة (Linux/Docker من غير tzdata) التطبيق يقع هنا مش في نص الشغل
+_ = AppClock.Now;
+
+app.UseForwardedHeaders();   // لازم أول Middleware
+
+// الـ Migration + Seed: تلقائي في الـ Development بس. في الـ Production فعّله بـ RunMigrationsOnStartup=true
+// بعد ما تاخد Backup، وسيبه شغال على نسخة واحدة بس من التطبيق
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("RunMigrationsOnStartup"))
+    await app.MigrationAndSeedAsync();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -43,6 +66,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en-US"),
+    SupportedCultures = new[] { new CultureInfo("en-US") },
+    SupportedUICultures = new[] { new CultureInfo("en-US") }
+});
 
 app.UseRouting();
 

@@ -17,7 +17,9 @@ namespace BillsSystem.Domain.Common
                 catch (TimeZoneNotFoundException) { }
                 catch (InvalidTimeZoneException) { }
             }
-            return TimeZoneInfo.Local;
+
+            throw new InvalidOperationException(
+                "Cairo time zone not found. On Linux/Docker install the 'tzdata' package.");
         }
 
         public static DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Zone);

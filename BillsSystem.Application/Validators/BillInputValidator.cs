@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using BillsSystem.Application.DTOs;
+using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Enums;
 using FluentValidation;
 
@@ -14,7 +15,9 @@ namespace BillsSystem.Application.Validators
             RuleLevelCascadeMode = CascadeMode.Stop;
 
             RuleFor(x => x.BillDate)
-                .NotEqual(default(DateTime)).WithMessage("BILL DATE is Required");
+                .NotEqual(default(DateTime)).WithMessage("BILL DATE is Required")
+                .Must(d => d.Year >= 2000 && d.Date <= AppClock.Today.AddDays(1))
+                    .WithMessage("BILL DATE is out of the allowed range");
 
             RuleFor(x => x.ClientId)
                 .GreaterThan(0).WithMessage("CLIENT NAME is Required");

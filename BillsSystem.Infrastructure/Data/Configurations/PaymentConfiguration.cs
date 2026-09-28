@@ -14,6 +14,7 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(p => p.Amount).HasColumnType("decimal(18,2)");
             builder.Property(p => p.PaymentDate).HasColumnType("date");
             builder.Property(p => p.Notes).HasMaxLength(200);
+            builder.Property(p => p.VoidReason).HasMaxLength(200);
 
             builder.HasQueryFilter(p => !p.Bill.IsDeleted);
         }

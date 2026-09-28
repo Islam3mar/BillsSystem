@@ -13,5 +13,9 @@ namespace BillsSystem.Domain.Entities
         public decimal Amount { get; set; }
         public DateTime PaymentDate { get; set; }
         public string? Notes { get; set; }
+
+        public bool IsVoided { get; set; }
+        public DateTime? VoidedAt { get; set; }
+        public string? VoidReason { get; set; }
     }
 }

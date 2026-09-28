@@ -75,19 +75,35 @@
     <div class="list-card mb-3">
         <table class="table table-bordered mb-0">
             <thead>
-                <tr><th>Date</th><th>Amount</th><th>Notes</th></tr>
+                <tr><th>Date</th><th>Amount</th><th>Notes</th><th>Status</th></tr>
             </thead>
             <tbody>
                 @if (!Model.Payments.Any())
                 {
-                    <tr><td colspan="3" class="text-center text-muted py-3">No payments yet</td></tr>
+                    <tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>
                 }
                 @foreach (var p in Model.Payments.OrderBy(p => p.PaymentDate).ThenBy(p => p.Id))
                 {
-                    <tr>
+                    <tr class="@(p.IsVoided ? "text-muted" : "")">
                         <td>@p.PaymentDate.ToString("yyyy/MM/dd")</td>
-                        <td>@p.Amount.ToString("0.00")</td>
+                        <td class="@(p.IsVoided ? "text-decoration-line-through" : "")">@p.Amount.ToString("0.00")</td>
                         <td>@p.Notes</td>
+                        <td>
+                            @if (p.IsVoided)
+                            {
+                                <span class="badge bg-secondary">Voided</span>
+                                <div class="small">@p.VoidReason</div>
+                            }
+                            else
+                            {
+                                <form asp-action="VoidPayment" asp-route-id="@Model.Id" asp-route-paymentId="@p.Id" method="post"
+                                      class="d-flex gap-1" onsubmit="return confirm('Void this payment?');">
+                                    @Html.AntiForgeryToken()
+                                    <input name="reason" maxlength="200" placeholder="Reason" class="form-control form-control-sm" required />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Void</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -104,7 +120,8 @@
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted">DATE</label>
-                <input name="paymentDate" type="date" value="@AppClock.Today.ToString("yyyy-MM-dd")" class="form-control" />
+                <input name="paymentDate" type="date" value="@AppClock.Today.ToString("yyyy-MM-dd")"
+                       min="@Model.BillDate.ToString("yyyy-MM-dd")" max="@AppClock.Today.ToString("yyyy-MM-dd")" class="form-control" />
             </div>
             <div class="col-auto">
                 <label class="form-label small text-muted">NOTES</label>

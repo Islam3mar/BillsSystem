@@ -11,5 +11,8 @@ namespace BillsSystem.Domain.Interfaces
 
         // Query واحد لكل الأصناف (Tracked) بدل GetByIdAsync جوه Loop
         Task<List<Item>> GetByIdsAsync(IEnumerable<int> ids);
+
+        void SetOriginalRowVersion(Item item, byte[] rowVersion);
+
     }
 }

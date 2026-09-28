@@ -7,6 +7,7 @@ using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -14,11 +15,13 @@ namespace BillsSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<ClientInput> _validator;
+        private readonly ILogger<ClientService> _logger;
 
-        public ClientService(IUnitOfWork unitOfWork, IValidator<ClientInput> validator)
+        public ClientService(IUnitOfWork unitOfWork, IValidator<ClientInput> validator, ILogger<ClientService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Client>> GetAllAsync()
@@ -41,8 +44,9 @@ namespace BillsSystem.Application.Services
 
             await _unitOfWork.Clients.AddAsync(client);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to create client {Name}", input.Name);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -68,10 +72,10 @@ namespace BillsSystem.Application.Services
             client.Phone = input.Phone.Trim();
             client.Address = input.Address.Trim();
 
-            _unitOfWork.Clients.Update(client);
             try { await _unitOfWork.SaveChangesAsync(); }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to update client {Id}", id);
                 result.NameError = "Couldn't save. The name may already exist, or a linked record was removed";
                 return result;
             }
@@ -93,8 +97,9 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete client {Id}", id);
                 return (false, "This client can't be deleted because it has related data linked to it");
             }
         }

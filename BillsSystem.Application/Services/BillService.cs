@@ -10,6 +10,7 @@ using BillsSystem.Domain.Interfaces;
 using BillsSystem.Domain.Specifications;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillsSystem.Application.Services
 {
@@ -17,11 +18,13 @@ namespace BillsSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<BillInput> _validator;
+        private readonly ILogger<BillService> _logger;
 
-        public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator)
+        public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator, ILogger<BillService> logger)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
@@ -42,13 +45,14 @@ namespace BillsSystem.Application.Services
         {
             var result = new BillResult();
 
-            // نفس الفورم اتبعت قبل كده (Double-click / Refresh) → رجّع الفاتورة الأصلية بدل ما تعمل واحدة تانية
+            // نفس الفورم اتبعت قبل كده → رجّع الفاتورة الأصلية وعلّم إنها "AlreadySaved"
             if (input.SubmissionId is Guid submissionId)
             {
                 var existingId = await _unitOfWork.Bills.GetIdBySubmissionAsync(submissionId);
                 if (existingId != null)
                 {
                     result.Success = true;
+                    result.AlreadySaved = true;
                     result.BillId = existingId;
                     return result;
                 }
@@ -68,7 +72,6 @@ namespace BillsSystem.Application.Services
                 return result;
             }
 
-            // Query واحد لكل الأصناف (بدل Query لكل صنف)
             var itemIds = input.Items.Select(i => i.ItemId).Distinct().ToList();
             var items = (await _unitOfWork.Items.GetByIdsAsync(itemIds)).ToDictionary(i => i.Id);
             if (items.Count != itemIds.Count)
@@ -112,7 +115,7 @@ namespace BillsSystem.Application.Services
                     Discount = discount,
                     Total = total,
                     DiscountAmount = discountAmount,
-                    Balance = total - discountAmount,     // مضمون ≥ 0 بفضل الـ Validator
+                    Balance = total - discountAmount,
 
                     // Snapshot
                     ItemName = item.Name,
@@ -144,7 +147,7 @@ namespace BillsSystem.Application.Services
                 valueDiscount = Money.Round(billsTotal * percentageDiscount / 100m);
             }
 
-            var theNet = billsTotal - valueDiscount;          // ≥ 0 دايمًا، فمفيش Math.Max بتخبي مشكلة
+            var theNet = billsTotal - valueDiscount;
 
             var paidUp = Money.Round(input.PaidUp);
             if (paidUp > theNet)
@@ -172,7 +175,6 @@ namespace BillsSystem.Application.Services
             if (paidUp > 0)
                 bill.Payments.Add(new Payment { Amount = paidUp, PaymentDate = billDate, Notes = "Initial payment" });
 
-            // خصم المخزون في نفس الـ SaveChanges (Transaction واحدة مع الفاتورة)
             foreach (var (itemId, qty) in requested)
                 items[itemId].QuantityInStock -= qty;
 
@@ -182,24 +184,29 @@ namespace BillsSystem.Application.Services
             {
                 await _unitOfWork.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
+                _logger.LogWarning(ex, "Stock concurrency conflict while saving bill for client {ClientId}", input.ClientId);
                 result.ItemsError = "Stock changed while saving. Please review the items and try again";
                 return result;
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
-                // ممكن يكون Double-submit سبق (Unique Index على SubmissionId)
                 if (input.SubmissionId is Guid sid)
                 {
                     var existingId = await _unitOfWork.Bills.GetIdBySubmissionAsync(sid);
                     if (existingId != null)
                     {
+                        _logger.LogInformation("Duplicate submission {SubmissionId} resolved to bill {BillId}", sid, existingId);
                         result.Success = true;
+                        result.AlreadySaved = true;
                         result.BillId = existingId;
                         return result;
                     }
                 }
+
+                _logger.LogError(ex, "Failed to save bill for client {ClientId} (SubmissionId {SubmissionId})",
+                    input.ClientId, input.SubmissionId);
                 result.GeneralError = "Couldn't save the invoice. Please try again";
                 return result;
             }
@@ -231,12 +238,14 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
+                _logger.LogWarning(ex, "Concurrency conflict while deleting bill {BillId}", id);
                 return (false, "This bill was changed by someone else. Reload and try again");
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to delete bill {BillId}", id);
                 return (false, "This bill can't be deleted");
             }
         }
@@ -250,15 +259,14 @@ namespace BillsSystem.Application.Services
             if (amount <= 0) return (false, "Payment amount Must be Greater than Zero");
             if (amount > bill.TheRest) return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})");
 
+            var date = (paymentDate ?? AppClock.Today).Date;
+            if (date < bill.BillDate.Date || date > AppClock.Today)
+                return (false, "Payment date must be between the bill date and today");
+
             notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
             if (notes != null && notes.Length > 200) return (false, "Notes must not exceed 200 characters");
 
-            bill.Payments.Add(new Payment
-            {
-                Amount = amount,
-                PaymentDate = (paymentDate ?? AppClock.Today).Date,
-                Notes = notes
-            });
+            bill.Payments.Add(new Payment { Amount = amount, PaymentDate = date, Notes = notes });
             bill.PaidUp += amount;
             bill.TheRest -= amount;
 
@@ -267,13 +275,53 @@ namespace BillsSystem.Application.Services
                 await _unitOfWork.SaveChangesAsync();
                 return (true, null);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
+                _logger.LogWarning(ex, "Concurrency conflict while adding payment to bill {BillId}", billId);
                 return (false, "This bill was changed by someone else. Reload and try again");
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, "Failed to add payment to bill {BillId}", billId);
                 return (false, "Couldn't save the payment. Please try again");
+            }
+        }
+
+        // إلغاء دفعة غلط: بتفضل ظاهرة في السجل (Voided) بس مش بتتحسب
+        public async Task<(bool Success, string? Error)> VoidPaymentAsync(int billId, int paymentId, string? reason)
+        {
+            var bill = await _unitOfWork.Bills.GetByIdAsync(billId);
+            if (bill == null) return (false, "Bill not found");
+
+            var payment = bill.Payments.FirstOrDefault(p => p.Id == paymentId);
+            if (payment == null) return (false, "Payment not found");
+            if (payment.IsVoided) return (false, "This payment is already voided");
+
+            reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+            if (reason == null) return (false, "Void reason is required");
+            if (reason.Length > 200) return (false, "Reason must not exceed 200 characters");
+
+            payment.IsVoided = true;
+            payment.VoidedAt = AppClock.Now;
+            payment.VoidReason = reason;
+
+            bill.PaidUp -= payment.Amount;
+            bill.TheRest += payment.Amount;
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict while voiding payment {PaymentId}", paymentId);
+                return (false, "This bill was changed by someone else. Reload and try again");
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Failed to void payment {PaymentId} on bill {BillId}", paymentId, billId);
+                return (false, "Couldn't void the payment. Please try again");
             }
         }
 

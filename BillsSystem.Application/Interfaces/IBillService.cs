@@ -13,5 +13,6 @@ namespace BillsSystem.Application.Interfaces
         Task<BillResult> CreateAsync(BillInput input);
         Task<(bool Success, string? Error)> DeleteAsync(int id);        // Soft delete + إرجاع المخزون
         Task<(bool Success, string? Error)> AddPaymentAsync(int billId, decimal amount, DateTime? paymentDate, string? notes);
+        Task<(bool Success, string? Error)> VoidPaymentAsync(int billId, int paymentId, string? reason);
     }
 }

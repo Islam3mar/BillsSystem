@@ -1,9 +1,11 @@
 ﻿using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Web.Extensions;
 using BillsSystem.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using BillsSystem.Web.Extensions;
 
 namespace BillsSystem.Web.Controllers
 {
@@ -44,6 +46,10 @@ namespace BillsSystem.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ItemFormViewModel model)
         {
+            if (ModelState.HasRealBindingErrors())
+                return await ReturnFormWithBindingErrorAsync(model);
+
+
             var result = await _itemService.CreateAsync(new ItemInput
             {
                 ItemTypeId = model.ItemTypeId,
@@ -89,7 +95,8 @@ namespace BillsSystem.Web.Controllers
                 SellingPrice = item.SellingPrice,
                 BuyingPrice = item.BuyingPrice,
                 QuantityInStock = item.QuantityInStock,
-                Notes = item.Notes
+                Notes = item.Notes,
+                RowVersion = item.RowVersion,
             };
 
             await PopulateCompaniesAsync(model.CompanyId);
@@ -102,6 +109,10 @@ namespace BillsSystem.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(ItemFormViewModel model)
         {
+            if (ModelState.HasRealBindingErrors())
+                return await ReturnFormWithBindingErrorAsync(model);
+
+
             var result = await _itemService.UpdateAsync(model.Id, new ItemInput
             {
                 ItemTypeId = model.ItemTypeId,
@@ -110,7 +121,8 @@ namespace BillsSystem.Web.Controllers
                 SellingPrice = model.SellingPrice,
                 BuyingPrice = model.BuyingPrice,
                 QuantityInStock = model.QuantityInStock,
-                Notes = model.Notes
+                Notes = model.Notes,
+                RowVersion = model.RowVersion,
             });
 
             if (!result.Success)
@@ -158,6 +170,17 @@ namespace BillsSystem.Web.Controllers
         {
             var units = await _unitService.GetAllUnitsAsync();
             ViewBag.Units = new SelectList(units, "Id", "Name", selectedId);
+        }
+
+
+
+        private async Task<IActionResult> ReturnFormWithBindingErrorAsync(ItemFormViewModel model)
+        {
+            ModelState.AddModelError(string.Empty, "Some values are invalid. Please check the numbers you entered");
+            await PopulateCompaniesAsync(model.CompanyId);
+            await PopulateTypesAsync(model.CompanyId, model.ItemTypeId);
+            await PopulateUnitsAsync(model.UnitId);
+            return View(model);
         }
     }
 }
