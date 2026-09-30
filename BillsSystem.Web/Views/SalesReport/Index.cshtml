@@ -16,6 +16,11 @@
             max-width: 100% !important;
             margin: 0 !important;
         }
+        /* لما تطبع، افتح كل مجموعات العملاء أوتوماتيك حتى لو كانت مقفولة على الشاشة */
+        .collapse {
+            display: block !important;
+            height: auto !important;
+        }
     }
 </style>
 
@@ -179,27 +184,81 @@
                         <th></th>
                     </tr>
                 </thead>
+                @{
+                    var reportGroups = report.Bills
+                        .GroupBy(b => b.ClientName)
+                        .Select(g => g.OrderByDescending(b => b.Id).ToList())
+                        .OrderByDescending(g => g.Max(b => b.Id))
+                        .ToList();
+                }
                 <tbody>
                     @if (!report.Bills.Any())
                     {
                         <tr><td colspan="10" class="text-center text-muted py-4">No invoices in this period</td></tr>
                     }
-                    @foreach (var bill in report.Bills)
+                    @foreach (var group in reportGroups)
                     {
-                        <tr>
-                            <td>@bill.Id</td>
-                            <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                            <td>@bill.ClientName</td>
-                            <td class="text-end">@bill.ItemsCount</td>
-                            <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
-                            <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
-                            <td class="text-end">@bill.TheNet.ToString("0.00")</td>
-                            <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
-                            <td class="text-end">@bill.TheRest.ToString("0.00")</td>
-                            <td class="no-print">
-                                <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                            </td>
-                        </tr>
+                        if (group.Count == 1)
+                        {
+                            var bill = group[0];
+                            <tr>
+                                <td>@bill.Id</td>
+                                <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                <td>@bill.ClientName</td>
+                                <td class="text-end">@bill.ItemsCount</td>
+                                <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
+                                <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
+                                <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                                <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
+                                <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                                <td class="no-print">
+                                    <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            var groupId = "report-grp-" + group[0].Id;
+                            <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                                role="button" aria-expanded="false" aria-controls="@groupId">
+                                <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices</td>
+                                <td>@group[0].ClientName</td>
+                                <td class="text-end">@group.Sum(b => b.ItemsCount)</td>
+                                <td class="text-end">@group.Sum(b => b.GrossTotal).ToString("0.00")</td>
+                                <td class="text-end">@group.Sum(b => b.TotalDiscount).ToString("0.00")</td>
+                                <td class="text-end">@group.Sum(b => b.TheNet).ToString("0.00")</td>
+                                <td class="text-end">@group.Sum(b => b.PaidUp).ToString("0.00")</td>
+                                <td class="text-end">@group.Sum(b => b.TheRest).ToString("0.00")</td>
+                                <td class="no-print"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
+                            </tr>
+                            <tr class="client-group-details">
+                                <td colspan="10">
+                                    <div class="collapse" id="@groupId">
+                                        <table class="table table-sm mb-0 client-subtable">
+                                            <tbody>
+                                                @foreach (var bill in group)
+                                                {
+                                                    <tr>
+                                                        <td>@bill.Id</td>
+                                                        <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                                        <td>@bill.ClientName</td>
+                                                        <td class="text-end">@bill.ItemsCount</td>
+                                                        <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
+                                                        <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
+                                                        <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                                                        <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
+                                                        <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                                                        <td class="no-print">
+                                                            <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
                 @if (report.Bills.Any())

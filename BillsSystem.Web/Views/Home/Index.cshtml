@@ -89,19 +89,65 @@
                     <th></th>
                 </tr>
             </thead>
+            @{
+                var recentGroups = Model.RecentBills
+                    .GroupBy(b => b.ClientName)
+                    .Select(g => g.OrderByDescending(b => b.Id).ToList())
+                    .OrderByDescending(g => g.Max(b => b.Id))
+                    .ToList();
+            }
             <tbody>
-                @foreach (var bill in Model.RecentBills)
+                @foreach (var group in recentGroups)
                 {
-                    <tr>
-                        <td>@bill.Id</td>
-                        <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                        <td>@bill.ClientName</td>
-                        <td class="text-end">@bill.TheNet.ToString("0.00")</td>
-                        <td class="text-end">@bill.TheRest.ToString("0.00")</td>
-                        <td>
-                            <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                        </td>
-                    </tr>
+                    if (group.Count == 1)
+                    {
+                        var bill = group[0];
+                        <tr>
+                            <td>@bill.Id</td>
+                            <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                            <td>@bill.ClientName</td>
+                            <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                            <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                            <td>
+                                <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var groupId = "home-grp-" + group[0].Id;
+                        <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                            role="button" aria-expanded="false" aria-controls="@groupId">
+                            <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices</td>
+                            <td>@group[0].ClientName</td>
+                            <td class="text-end">@group.Sum(b => b.TheNet).ToString("0.00")</td>
+                            <td class="text-end">@group.Sum(b => b.TheRest).ToString("0.00")</td>
+                            <td><span class="btn btn-sm btn-outline-secondary">View all</span></td>
+                        </tr>
+                        <tr class="client-group-details">
+                            <td colspan="6">
+                                <div class="collapse" id="@groupId">
+                                    <table class="table table-sm mb-0 client-subtable">
+                                        <tbody>
+                                            @foreach (var bill in group)
+                                            {
+                                                <tr>
+                                                    <td>@bill.Id</td>
+                                                    <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                                    <td>@bill.ClientName</td>
+                                                    <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                                                    <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                                                    <td>
+                                                        <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>

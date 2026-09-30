@@ -598,3 +598,41 @@ body {
         padding: 18px;
     }
 }
+
+/* ===== Grouped invoices by client (Home / Bills / Sales Report) ===== */
+.client-group-row {
+    cursor: pointer;
+    background-color: #f8f9fb;
+}
+
+    .client-group-row:hover {
+        background-color: #eef1f7;
+    }
+
+    .client-group-row td {
+        font-weight: 600;
+    }
+
+.group-arrow {
+    display: inline-block;
+    transition: transform 0.15s ease-in-out;
+    margin-right: 6px;
+    color: #6c757d;
+}
+
+.client-group-row[aria-expanded="true"] .group-arrow {
+    transform: rotate(90deg);
+}
+
+.client-group-details td {
+    padding: 0;
+    border-top: none;
+}
+
+.client-subtable {
+    background-color: #fcfcfd;
+}
+
+    .client-subtable td {
+        border-top: 1px solid #eef0f3;
+    }
