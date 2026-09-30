@@ -1,0 +1,293 @@
+﻿/* ============================================================
+   Bills System — Pro Layer (v3)
+   طبقة إضافية فوق site.css — مش بتلغي حاجة، بتقوّيها بس
+   ============================================================ */
+
+:root {
+    --font-main: "Plus Jakarta Sans", "Segoe UI", Roboto, sans-serif;
+    --brand-glow: rgba(75, 90, 224, .28);
+    --success-glow: rgba(34, 184, 96, .28);
+    --danger-glow: rgba(241, 106, 106, .28);
+}
+
+body, .btn, .form-control, .form-select, .table, .dropdown-menu {
+    font-family: var(--font-main) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-main) !important;
+    letter-spacing: -.01em;
+}
+
+/* ---------- Content entrance animation ---------- */
+@keyframes proFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content > * {
+    animation: proFadeUp .35s ease both;
+}
+
+/* ---------- Topbar polish ---------- */
+.topbar {
+    position: relative;
+  
+}
+
+    .topbar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(600px 120px at 15% -20%, rgba(255, 255, 255, .12), transparent 60%);
+        pointer-events: none;
+    }
+
+.topbar-username {
+    font-size: .85rem;
+    font-weight: 600;
+    margin-right: 8px;
+    opacity: .9;
+}
+
+/* ---------- Sidebar sections ---------- */
+.sidebar-section {
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    font-weight: 800;
+    color: #b7bece;
+    padding: 18px 14px 6px;
+}
+
+.sidebar-link {
+    position: relative;
+}
+
+    .sidebar-link.active::before {
+        content: "";
+        position: absolute;
+        left: -14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 60%;
+        border-radius: 0 4px 4px 0;
+        background: #fff;
+        box-shadow: 0 0 10px rgba(255, 255, 255, .8);
+    }
+
+/* ---------- Card lift ---------- */
+.form-card, .list-card, .kpi-card, .quick-action, .auth-card {
+    transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.kpi-card {
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+    .kpi-card:hover {
+        border-color: var(--border-soft);
+    }
+
+.kpi-icon {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .18);
+}
+
+/* ---------- Buttons: shine on hover ---------- */
+.btn-save, .btn-cancel, .auth-card .btn-primary {
+    position: relative;
+    overflow: hidden;
+}
+
+    .btn-save::before, .btn-cancel::before, .auth-card .btn-primary::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -120%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .35), transparent);
+        transform: skewX(-20deg);
+        transition: left .5s ease;
+    }
+
+    .btn-save:hover::before, .btn-cancel:hover::before, .auth-card .btn-primary:hover::before {
+        left: 130%;
+    }
+
+    .btn-save:focus-visible, .btn-cancel:focus-visible {
+        outline: 3px solid var(--brand-glow);
+        outline-offset: 2px;
+    }
+
+/* ---------- Tables: rounded wrapper + sticky header ---------- */
+.list-card {
+    overflow: hidden;
+}
+
+    .list-card .table {
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .list-card thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+.table tbody tr:nth-child(even) {
+    background-color: #fbfcfe;
+}
+
+/* ---------- Inputs: nicer focus ---------- */
+.form-control:focus, .form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 4px var(--brand-glow);
+}
+
+/* ---------- Empty states ---------- */
+.empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+}
+
+    .empty-state i {
+        font-size: 2.2rem;
+        display: block;
+        margin-bottom: 10px;
+        color: #c9cee0;
+    }
+
+/* ---------- Custom scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d3d8e6;
+    border-radius: 10px;
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #b7bece;
+    }
+
+/* ---------- Toasts ---------- */
+.toast-stack {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 340px;
+    max-width: calc(100vw - 36px);
+}
+
+.pro-toast {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(20, 30, 60, .18);
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-left: 4px solid var(--btn-success);
+    animation: toastIn .25s ease both;
+}
+
+    .pro-toast.toast-error {
+        border-left-color: var(--btn-danger);
+    }
+
+    .pro-toast .toast-icon {
+        font-size: 1.2rem;
+        color: var(--btn-success);
+    }
+
+    .pro-toast.toast-error .toast-icon {
+        color: var(--btn-danger);
+    }
+
+    .pro-toast .toast-text {
+        flex: 1;
+        font-size: .88rem;
+        font-weight: 500;
+        color: #2b2f38;
+    }
+
+    .pro-toast .toast-close {
+        border: none;
+        background: none;
+        color: #b7bece;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toastOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+}
+
+.pro-toast.toast-out {
+    animation: toastOut .2s ease forwards;
+}
+
+/* ---------- Confirm modal ---------- */
+.confirm-modal {
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: var(--shadow-card-hover);
+}
+
+.confirm-modal-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: var(--danger-glow);
+    color: var(--btn-danger);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto;
+}

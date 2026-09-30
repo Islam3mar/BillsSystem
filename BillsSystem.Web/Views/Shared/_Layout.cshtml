@@ -1,5 +1,7 @@
 ﻿@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -7,10 +9,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Bills System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
-
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site-pro.css" asp-append-version="true" />
 </head>
 <body>
     <div class="app-shell">
@@ -22,6 +27,7 @@
             <div class="topbar-right">
                 <div class="dropdown topbar-user">
                     <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <span class="topbar-username d-none d-md-inline">@User.Identity?.Name</span>
                         <i class="bi bi-person-circle"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -37,17 +43,17 @@
                 </div>
             </div>
         </header>
-
         <div class="app-body">
             <aside class="sidebar">
                 <nav class="sidebar-nav">
                     <a class="sidebar-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
                         <i class="bi bi-house-door"></i> Home Page
                     </a>
+
+                    <div class="sidebar-section">Catalog</div>
                     <a class="sidebar-link @(currentController == "Companies" ? "active" : "")" asp-controller="Companies" asp-action="Index">
                         <i class="bi bi-pencil-square"></i> Company Data
                     </a>
-                  
                     <a class="sidebar-link @(currentController == "Units" ? "active" : "")" asp-controller="Units" asp-action="Index">
                         <i class="bi bi-grid-3x3-gap"></i> All Units
                     </a>
@@ -60,28 +66,59 @@
                     <a class="sidebar-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">
                         <i class="bi bi-layers"></i> Categories
                     </a>
+
+                    <div class="sidebar-section">Sales</div>
                     <a class="sidebar-link @(currentController == "Clients" ? "active" : "")" asp-controller="Clients" asp-action="Index">
                         <i class="bi bi-people"></i> Clients
                     </a>
                     <a class="sidebar-link @(currentController == "Bills" ? "active" : "")" asp-controller="Bills" asp-action="Index">
-                        <i class="bi bi-sliders2"></i> sales invoice
+                        <i class="bi bi-sliders2"></i> Sales Invoice
                     </a>
+
+                    <div class="sidebar-section">Reports</div>
                     <a class="sidebar-link @(currentController == "SalesReport" ? "active" : "")" asp-controller="SalesReport" asp-action="Index">
                         <i class="bi bi-arrow-repeat"></i> Sales Report
                     </a>
                 </nav>
             </aside>
-
             <main class="content">
                 @RenderBody()
             </main>
         </div>
     </div>
 
+    <!-- ===== Toast container (مركزي لكل الصفحات) ===== -->
+    <div class="toast-stack" id="toastStack"></div>
+
+    <!-- ===== Confirm Modal (مشترك لكل عمليات الحذف) ===== -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content confirm-modal">
+                <div class="confirm-modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                <h5 class="mt-3 mb-1" id="confirmModalTitle">Are you sure?</h5>
+                <p class="text-muted mb-4" id="confirmModalBody">This action cannot be undone.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-cancel px-4" id="confirmModalOkBtn">Yes, Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/site-pro.js" asp-append-version="true"></script>
+    <script>
+            @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    @:showToast('success', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)));
+            }
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    @:showToast('error', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMessage)));
+            }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
