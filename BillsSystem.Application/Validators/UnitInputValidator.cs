@@ -15,6 +15,8 @@ namespace BillsSystem.Application.Validators
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("UNIT NAME is Required")
                 .MaximumLength(150).WithMessage("UNIT NAME must not exceed 150 characters");
+
+            RuleFor(x => x.Notes).MaximumLength(500);
         }
     }
 }

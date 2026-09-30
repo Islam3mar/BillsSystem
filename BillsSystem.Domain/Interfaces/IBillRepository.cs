@@ -9,6 +9,10 @@ namespace BillsSystem.Domain.Interfaces
     public interface IBillRepository : IGenericRepository<Bill>
     {
         Task<int?> GetIdBySubmissionAsync(Guid submissionId);
+
+        // نسخة للعرض فقط (AsNoTracking) - للـ Details، مش للتعديل
+        Task<Bill?> GetByIdReadOnlyAsync(int id);
+
         Task<decimal> GetTotalOutstandingAsync();
 
         // التقارير كلها بتتحسب في SQL (مفيش تحميل للفواتير في الذاكرة)

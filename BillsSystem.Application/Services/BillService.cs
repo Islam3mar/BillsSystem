@@ -39,7 +39,7 @@ namespace BillsSystem.Application.Services
         }
 
         public async Task<Bill?> GetByIdAsync(int id)
-            => await _unitOfWork.Bills.GetByIdAsync(id);
+       => await _unitOfWork.Bills.GetByIdReadOnlyAsync(id);
 
         public async Task<BillResult> CreateAsync(BillInput input)
         {

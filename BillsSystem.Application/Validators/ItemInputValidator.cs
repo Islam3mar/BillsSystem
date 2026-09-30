@@ -34,6 +34,10 @@ namespace BillsSystem.Application.Validators
             RuleFor(x => x.QuantityInStock)
                 .GreaterThanOrEqualTo(0).WithMessage("STOCK QUANTITY Must be Greater than or equal Zero")
                 .LessThanOrEqualTo(Limits.MaxQuantity).WithMessage($"STOCK QUANTITY can't exceed {Limits.MaxQuantity:N0}");
+
+
+            RuleFor(x => x.Notes).MaximumLength(500);
+
         }
     }
 }

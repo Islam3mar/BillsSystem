@@ -21,6 +21,16 @@ namespace BillsSystem.Infrastructure.Repositories
                           .AsSplitQuery()
                           .FirstOrDefaultAsync(b => b.Id == id);
 
+        // AsNoTracking: بس للعرض (صفحة Details)، أخف على الذاكرة والأداء
+        public async Task<Bill?> GetByIdReadOnlyAsync(int id)
+            => await Query.Include(b => b.Client)
+                          .Include(b => b.Items)
+                          .Include(b => b.Payments)
+                          .AsSplitQuery()
+                          .AsNoTracking()
+                          .FirstOrDefaultAsync(b => b.Id == id);
+
+
         public async Task<int?> GetIdBySubmissionAsync(Guid submissionId)
             => await Query.AsNoTracking()
                           .Where(b => b.SubmissionId == submissionId)

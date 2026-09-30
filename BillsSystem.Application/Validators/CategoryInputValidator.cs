@@ -18,6 +18,10 @@ namespace BillsSystem.Application.Validators
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("CATEGORY NAME is Required")
                 .MaximumLength(150).WithMessage("CATEGORY NAME must not exceed 150 characters");
+
+
+            RuleFor(x => x.Notes).MaximumLength(500);
+
         }
     }
 }

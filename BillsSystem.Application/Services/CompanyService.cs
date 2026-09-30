@@ -110,7 +110,10 @@ namespace BillsSystem.Application.Services
             var validation = await _validator.ValidateAsync(input);
             if (!validation.IsValid)
             {
-                result.NameError = validation.Errors.First().ErrorMessage;
+                foreach (var error in validation.Errors)
+                {
+                    if (error.PropertyName == nameof(input.Name)) result.NameError = error.ErrorMessage;
+                }
                 return result;
             }
 

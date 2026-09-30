@@ -16,6 +16,8 @@ namespace BillsSystem.Application.Validators
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("COMPANY NAME is Required")
                 .MaximumLength(150).WithMessage("COMPANY NAME must not exceed 150 characters");
+
+            RuleFor(x => x.Notes).MaximumLength(500);
         }
     }
 }
