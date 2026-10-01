@@ -157,6 +157,30 @@ namespace BillsSystem.Web.Controllers
             });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayWithStripe(int id, decimal amount)
+        {
+            var successUrl = Url.Action(nameof(StripeSuccess), "Bills", new { id }, Request.Scheme)!;
+            var cancelUrl = Url.Action(nameof(Details), "Bills", new { id }, Request.Scheme)!;
+
+            var (success, error, url) = await _billService.CreateStripeCheckoutAsync(id, amount, successUrl, cancelUrl);
+            if (!success)
+            {
+                TempData["ErrorMessage"] = error;
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            return Redirect(url!);
+        }
+
+        public IActionResult StripeSuccess(int id)
+        {
+            TempData["SuccessMessage"] = "Payment received — it may take a few seconds to reflect on this page.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+
         // "Company / Type / Item" عشان صنفين بنفس الاسم ميتلخبطوش
         private static string DisplayName(Item item)
             => $"{item.ItemType.Company.Name} / {item.ItemType.Name} / {item.Name}";

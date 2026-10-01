@@ -144,5 +144,7 @@ namespace BillsSystem.Infrastructure.Repositories
                 .Take(take)
                 .ToListAsync();
         }
+        public async Task<bool> StripeSessionExistsAsync(string stripeSessionId) => await _context.Payments.AsNoTracking()
+                     .AnyAsync(p => p.StripeSessionId == stripeSessionId);
     }
 }

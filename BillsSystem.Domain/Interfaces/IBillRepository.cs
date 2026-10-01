@@ -20,5 +20,8 @@ namespace BillsSystem.Domain.Interfaces
         Task<List<BillSummaryRow>> GetBillSummariesAsync(DateTime from, DateTime to);
         Task<List<ItemSalesRow>> GetTopItemsAsync(DateTime from, DateTime to, int take);
         Task<List<ClientSalesRow>> GetTopClientsAsync(DateTime from, DateTime to, int take);
+
+
+        Task<bool> StripeSessionExistsAsync(string stripeSessionId);
     }
 }

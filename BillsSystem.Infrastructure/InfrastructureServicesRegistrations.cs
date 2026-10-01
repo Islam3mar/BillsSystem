@@ -4,6 +4,7 @@ using System.Text;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Interfaces;
 using BillsSystem.Infrastructure.Data;
+using BillsSystem.Infrastructure.Payments;
 using BillsSystem.Infrastructure.Repositories;
 using BillsSystem.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -11,6 +12,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using BillsSystem.Infrastructure.Payments;
+using BillsSystem.Application.DTOs;
 
 namespace BillsSystem.Infrastructure
 {
@@ -36,6 +39,9 @@ namespace BillsSystem.Infrastructure
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SameSite = SameSiteMode.Lax;
                 });
+
+            services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
+            services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
 
             return services;
         }

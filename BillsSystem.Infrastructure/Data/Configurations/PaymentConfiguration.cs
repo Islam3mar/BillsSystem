@@ -16,6 +16,15 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(p => p.Notes).HasMaxLength(200);
             builder.Property(p => p.VoidReason).HasMaxLength(200);
 
+            builder.Property(p => p.Method).HasConversion<int>();
+            builder.Property(p => p.StripeSessionId).HasMaxLength(100);
+            builder.Property(p => p.StripePaymentIntentId).HasMaxLength(100);
+
+            // مفيش فاتورة تتسجلها Session بتاعة Stripe مرتين (Webhook بيتكرر أحيانًا)
+            builder.HasIndex(p => p.StripeSessionId)
+                   .IsUnique()
+                   .HasFilter("[StripeSessionId] IS NOT NULL");
+
             builder.HasQueryFilter(p => !p.Bill.IsDeleted);
         }
     }

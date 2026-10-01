@@ -4,6 +4,7 @@ using BillsSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BillsSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001202419_AddStripePaymentSupport")]
+    partial class AddStripePaymentSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -374,23 +377,12 @@ namespace BillsSystem.Infrastructure.Migrations
                     b.Property<bool>("IsVoided")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Method")
-                        .HasColumnType("int");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("date");
-
-                    b.Property<string>("StripePaymentIntentId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("StripeSessionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -405,10 +397,6 @@ namespace BillsSystem.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BillId");
-
-                    b.HasIndex("StripeSessionId")
-                        .IsUnique()
-                        .HasFilter("[StripeSessionId] IS NOT NULL");
 
                     b.ToTable("Payments");
                 });

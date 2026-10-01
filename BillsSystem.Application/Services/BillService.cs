@@ -20,11 +20,15 @@ namespace BillsSystem.Application.Services
         private readonly IValidator<BillInput> _validator;
         private readonly ILogger<BillService> _logger;
 
-        public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator, ILogger<BillService> logger)
+        private readonly IStripeCheckoutService _stripeCheckoutService;
+
+        public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator,
+            ILogger<BillService> logger, IStripeCheckoutService stripeCheckoutService)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _stripeCheckoutService = stripeCheckoutService;
         }
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
@@ -324,6 +328,77 @@ namespace BillsSystem.Application.Services
                 return (false, "Couldn't void the payment. Please try again");
             }
         }
+
+        public async Task<(bool Success, string? Error, string? CheckoutUrl)> CreateStripeCheckoutAsync(
+    int billId, decimal amount, string successUrl, string cancelUrl)
+        {
+            var bill = await _unitOfWork.Bills.GetByIdAsync(billId);
+            if (bill == null) return (false, "Bill not found", null);
+
+            amount = Money.Round(amount);
+            if (amount <= 0) return (false, "Payment amount Must be Greater than Zero", null);
+            if (amount > bill.TheRest) return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})", null);
+
+            var (sessionId, url) = await _stripeCheckoutService.CreateCheckoutSessionAsync(billId, amount, successUrl, cancelUrl);
+            _logger.LogInformation("Stripe checkout session {SessionId} created for bill {BillId}, amount {Amount}",
+                sessionId, billId, amount);
+
+            return (true, null, url);
+        }
+
+        //------------------------------------------------------------------------------------------
+        // بتتنادى من الـ Webhook بس — مش من أي Controller Action عادي
+        public async Task<(bool Success, string? Error)> ConfirmStripePaymentAsync(
+            string stripeSessionId, string? stripePaymentIntentId, decimal amount, int billId)
+        {
+            // Idempotency: لو Stripe بعتت نفس الـ Event مرتين، متسجلش الدفعة مرتين
+            if (await _unitOfWork.Bills.StripeSessionExistsAsync(stripeSessionId))
+            {
+                _logger.LogInformation("Stripe session {SessionId} already processed, skipping", stripeSessionId);
+                return (true, null);
+            }
+
+            var bill = await _unitOfWork.Bills.GetByIdAsync(billId);
+            if (bill == null)
+            {
+                _logger.LogError("Stripe webhook: bill {BillId} not found for session {SessionId}", billId, stripeSessionId);
+                return (false, "Bill not found");
+            }
+
+            amount = Money.Round(amount);
+
+            // الفلوس اتقبضت فعليًا، فلازم تتسجل حتى لو في سباق نادر زادت عن TheRest الحالي
+            if (amount > bill.TheRest)
+                _logger.LogWarning("Stripe payment {Amount} exceeds TheRest {TheRest} for bill {BillId} — recorded in full, needs review",
+                    amount, bill.TheRest, billId);
+
+            bill.Payments.Add(new Payment
+            {
+                Amount = amount,
+                PaymentDate = AppClock.Today,
+                Notes = "Paid via Stripe",
+                Method = PaymentMethod.Stripe,
+                StripeSessionId = stripeSessionId,
+                StripePaymentIntentId = stripePaymentIntentId
+            });
+
+            bill.PaidUp += amount;
+            bill.TheRest = Math.Max(0, bill.TheRest - amount);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Failed to save Stripe payment for bill {BillId}, session {SessionId}", billId, stripeSessionId);
+                return (false, "Database error");
+            }
+        }
+
+        //------------------------------------------------------------------------------------------
+
 
         private static void MapValidationErrors(FluentValidation.Results.ValidationResult validation, BillResult result)
         {
