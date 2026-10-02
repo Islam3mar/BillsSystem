@@ -43,6 +43,15 @@
             </div>
         </div>
 
+        <div class="form-row">
+            <label asp-for="MaxCreditLimit"></label>
+            <div class="flex-grow-1">
+                <input asp-for="MaxCreditLimit" type="number" step="0.01" min="0.01" class="form-control" placeholder="Leave empty for no limit" />
+                <span asp-validation-for="MaxCreditLimit" class="text-danger"></span>
+                <small class="text-muted">Maximum total unpaid amount allowed for this client. New bills that exceed it are blocked.</small>
+            </div>
+        </div>
+
         <div class="form-actions">
             <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
             <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>

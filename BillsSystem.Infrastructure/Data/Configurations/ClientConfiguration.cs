@@ -17,6 +17,7 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             // رقم موبايل مصري: 11 رقم بالظبط
             builder.Property(c => c.Phone).IsRequired().HasMaxLength(11);
             builder.Property(c => c.Address).IsRequired().HasMaxLength(300);
+            builder.Property(c => c.MaxCreditLimit).HasPrecision(18, 2);
 
             // خاصية محسوبة runtime بس - مش عمود في الجدول
             builder.Ignore(c => c.Network);

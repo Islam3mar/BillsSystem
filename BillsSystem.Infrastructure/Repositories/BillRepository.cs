@@ -40,6 +40,9 @@ namespace BillsSystem.Infrastructure.Repositories
         public async Task<decimal> GetTotalOutstandingAsync()
             => await Query.AsNoTracking().SumAsync(b => b.TheRest);
 
+        public async Task<decimal> GetClientOutstandingAsync(int clientId)
+            => await Query.AsNoTracking().Where(b => b.ClientId == clientId).SumAsync(b => b.TheRest);
+
         // ---------------- Reports (كلها SQL) ----------------
         private static (DateTime Start, DateTime EndExclusive) Range(DateTime from, DateTime to)
             => (from.Date, to.Date.AddDays(1));

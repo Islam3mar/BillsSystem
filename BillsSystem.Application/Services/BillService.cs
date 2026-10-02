@@ -160,6 +160,20 @@ namespace BillsSystem.Application.Services
                 return result;
             }
 
+            // ---------- سقف الدين: الفاتورة اللي هتزوّد الدين ومش هتتحفظ لو هتعدّي الحد ----------
+            var newDebt = theNet - paidUp;
+            if (client.MaxCreditLimit is decimal limit && newDebt > 0)
+            {
+                var currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(client.Id);
+                if (currentDebt + newDebt > limit)
+                {
+                    var available = Math.Max(0, limit - currentDebt);
+                    result.ClientError = $"Credit limit exceeded for '{client.Name}'. Limit: {limit:0.00}, current debt: {currentDebt:0.00}, " +
+                                         $"this bill adds: {newDebt:0.00}. Available credit: {available:0.00}. Increase Paid Up or ask the client to settle part of the debt first";
+                    return result;
+                }
+            }
+
             var billDate = input.BillDate.Date;
             var bill = new Bill
             {

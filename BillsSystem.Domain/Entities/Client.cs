@@ -12,6 +12,9 @@ namespace BillsSystem.Domain.Entities
         public string Phone { get; set; } = null!;
         public string Address { get; set; } = null!;
 
+        // أقصى دين مسموح للعميل (null = من غير حد). بيتحسب على مجموع TheRest لكل فواتيره
+        public decimal? MaxCreditLimit { get; set; }
+
         // خاصية محسوبة مش متخزنة في الداتابيز (Ignored في الـ Configuration)
         public string Network => EgyptianMobilePrefixHelper.GetNetworkName(Phone) ?? "-";
     }

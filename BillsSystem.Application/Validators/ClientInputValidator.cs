@@ -28,6 +28,12 @@ namespace BillsSystem.Application.Validators
             RuleFor(x => x.Address)
                 .NotEmpty().WithMessage("Address is Required")
                 .MaximumLength(300).WithMessage("Address must not exceed 300 characters");
+
+            // اختياري: فاضي = من غير حد أقصى للدين
+            RuleFor(x => x.MaxCreditLimit)
+                .GreaterThan(0).WithMessage("MAX CREDIT LIMIT must be greater than zero (leave it empty for no limit)")
+                .LessThanOrEqualTo(1_000_000_000m).WithMessage("MAX CREDIT LIMIT is too large")
+                .When(x => x.MaxCreditLimit.HasValue);
         }
     }
 }

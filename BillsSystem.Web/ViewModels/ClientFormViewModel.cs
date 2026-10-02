@@ -15,5 +15,8 @@ namespace BillsSystem.Web.ViewModels
 
         [Display(Name = "ADDRESS")]
         public string Address { get; set; } = string.Empty;
+
+        [Display(Name = "MAX CREDIT LIMIT")]
+        public decimal? MaxCreditLimit { get; set; }
     }
 }
