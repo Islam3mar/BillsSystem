@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Reports;
 
 namespace BillsSystem.Domain.Interfaces
@@ -26,5 +27,13 @@ namespace BillsSystem.Domain.Interfaces
 
 
         Task<bool> StripeSessionExistsAsync(string stripeSessionId);
+
+        // ---------- التذكيرات ----------
+        // فواتير ليها DueDate وعليها متبقي وميعادها <= النهارده + daysBefore (الفلترة النهائية في ReminderService)
+        Task<List<ReminderCandidateRow>> GetReminderCandidatesAsync(DateTime today, int daysBefore);
+        Task<ReminderCandidateRow?> GetReminderCandidateAsync(int billId);
+
+        // UPDATE مباشر لعمودين بس، من غير RowVersion/Tracking عشان مايتعارضش مع أدمن بيسجل دفعة
+        Task MarkReminderSentAsync(int billId, ReminderType type, DateTime now);
     }
 }

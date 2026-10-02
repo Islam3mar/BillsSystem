@@ -23,6 +23,13 @@ namespace BillsSystem.Domain.Entities
         public decimal PaidUp { get; set; }      // = مجموع Payments (بيتحدث مع كل دفعة)
         public decimal TheRest { get; set; }     // = TheNet - PaidUp
 
+        // ميعاد السداد (اختياري، بيتحدد وقت عمل الفاتورة لو TheRest > 0). مفيش DueDate = مفيش تذكيرات
+        public DateTime? DueDate { get; set; }
+
+        // آخر تذكير اتبعت على الفاتورة (عشان منبعتش نفس الإيميل مرتين)
+        public DateTime? LastReminderSentAt { get; set; }
+        public ReminderType LastReminderType { get; set; }
+
         // Soft delete: الفاتورة بتفضل في الداتابيز بس بتختفي من كل الشاشات والتقارير
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }

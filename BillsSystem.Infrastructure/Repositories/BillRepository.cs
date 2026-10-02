@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using BillsSystem.Domain.Reports;
 using BillsSystem.Infrastructure.Data;
@@ -42,6 +44,44 @@ namespace BillsSystem.Infrastructure.Repositories
 
         public async Task<decimal> GetClientOutstandingAsync(int clientId)
             => await Query.AsNoTracking().Where(b => b.ClientId == clientId).SumAsync(b => b.TheRest);
+
+        // ---------------- Reminders ----------------
+        private static readonly Expression<Func<Bill, ReminderCandidateRow>> ToReminderRow = b => new ReminderCandidateRow
+        {
+            BillId = b.Id,
+            BillDate = b.BillDate,
+            DueDate = b.DueDate!.Value,
+            TheNet = b.TheNet,
+            TheRest = b.TheRest,
+            LastReminderSentAt = b.LastReminderSentAt,
+            LastReminderType = b.LastReminderType,
+            ClientId = b.ClientId,
+            ClientName = b.Client.Name,
+            ClientEmail = b.Client.Email
+        };
+
+        public async Task<List<ReminderCandidateRow>> GetReminderCandidatesAsync(DateTime today, int daysBefore)
+        {
+            var horizon = today.Date.AddDays(Math.Max(0, daysBefore));
+
+            return await Query.AsNoTracking()
+                .Where(b => b.DueDate != null && b.TheRest > 0 && b.DueDate <= horizon)
+                .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
+                .Select(ToReminderRow)
+                .ToListAsync();
+        }
+
+        public async Task<ReminderCandidateRow?> GetReminderCandidateAsync(int billId)
+            => await Query.AsNoTracking()
+                .Where(b => b.Id == billId && b.DueDate != null)
+                .Select(ToReminderRow)
+                .FirstOrDefaultAsync();
+
+        public async Task MarkReminderSentAsync(int billId, ReminderType type, DateTime now)
+            => await Query.Where(b => b.Id == billId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.LastReminderSentAt, now)
+                    .SetProperty(b => b.LastReminderType, type));
 
         // ---------------- Reports (كلها SQL) ----------------
         private static (DateTime Start, DateTime EndExclusive) Range(DateTime from, DateTime to)

@@ -28,5 +28,9 @@ namespace BillsSystem.Web.ViewModels
 
         [Display(Name = "PAID UP")]
         public decimal PaidUp { get; set; }
+
+        [Display(Name = "DUE DATE")]
+        [DataType(DataType.Date)]
+        public DateTime? DueDate { get; set; }
     }
 }

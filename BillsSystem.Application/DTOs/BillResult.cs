@@ -27,13 +27,14 @@ namespace BillsSystem.Application.DTOs
         public string? PercentageDiscountError { get; set; }
         public string? PaidUpError { get; set; }
         public string? ValueDiscountError { get; set; }
+        public string? DueDateError { get; set; }
         public string? GeneralError { get; set; }
 
         public List<BillItemRowError> ItemRowErrors { get; set; } = new();
 
         public bool HasErrors =>
             BillDateError != null || ClientError != null || ItemsError != null ||
-            PercentageDiscountError != null || ValueDiscountError != null || PaidUpError != null ||
+            PercentageDiscountError != null || ValueDiscountError != null || PaidUpError != null || DueDateError != null ||
             GeneralError != null || ItemRowErrors.Any();
     }
 }

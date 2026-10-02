@@ -17,6 +17,9 @@ namespace BillsSystem.Application.DTOs
         public decimal ValueDiscount { get; set; }
 
         public decimal PaidUp { get; set; }
+
+        // ميعاد السداد (اختياري). بيتتجاهل لو الفاتورة Fully Paid
+        public DateTime? DueDate { get; set; }
         public List<BillItemInput> Items { get; set; } = new();
     }
 }

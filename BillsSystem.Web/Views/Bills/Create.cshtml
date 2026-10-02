@@ -95,60 +95,60 @@
         <div class="list-card mt-2">
             <div class="table-responsive">
                 <table class="table table-bordered mb-0" id="itemsTable">
-                <thead>
-                    <tr>
-                        <th>Item Code</th>
-                        <th>Item Name</th>
-                        <th>Unit</th>
-                        <th>Quantity</th>
-                        <th>Selling Price</th>
-                        <th>Discount Type</th>
-                        <th>Discount</th>
-                        <th>Total</th>
-                        <th>Balance</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="itemsTableBody">
-                    @for (int i = 0; i < Model.Items.Count; i++)
-                    {
-                        var total = Model.Items[i].SellingPrice * (Model.Items[i].Quantity ?? 0);
-                        var balance = Model.Items[i].DiscountType == DiscountType.Percentage
-                            ? total - (total * Model.Items[i].Discount / 100)
-                            : total - Model.Items[i].Discount;
-
-                        <tr data-row>
-                            <td>
-                                @Model.Items[i].ItemId
-                                <input type="hidden" name="Items[@i].ItemId" value="@Model.Items[i].ItemId" />
-                            </td>
-                            <td>@Model.Items[i].ItemName</td>
-                            <td>@Model.Items[i].UnitName</td>
-                            <td>
-                                @Model.Items[i].Quantity
-                                <input type="hidden" name="Items[@i].Quantity" value="@Model.Items[i].Quantity" />
-                            </td>
-                            <td>
-                                @Model.Items[i].SellingPrice.ToString("0.00")
-                                <input type="hidden" name="Items[@i].SellingPrice" value="@Model.Items[i].SellingPrice" />
-                            </td>
-                            <td>
-                                <select class="form-select form-select-sm discount-type-select" name="Items[@i].DiscountType">
-                                    <option value="0" selected="@(Model.Items[i].DiscountType == DiscountType.Value)">Value</option>
-                                    <option value="1" selected="@(Model.Items[i].DiscountType == DiscountType.Percentage)">Percentage</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" class="form-control form-control-sm discount-input"
-                                       name="Items[@i].Discount" value="@Model.Items[i].Discount" />
-                            </td>
-                            <td class="row-total">@total.ToString("0.00")</td>
-                            <td class="row-balance">@balance.ToString("0.00")</td>
-                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+                    <thead>
+                        <tr>
+                            <th>Item Code</th>
+                            <th>Item Name</th>
+                            <th>Unit</th>
+                            <th>Quantity</th>
+                            <th>Selling Price</th>
+                            <th>Discount Type</th>
+                            <th>Discount</th>
+                            <th>Total</th>
+                            <th>Balance</th>
+                            <th></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            var total = Model.Items[i].SellingPrice * (Model.Items[i].Quantity ?? 0);
+                            var balance = Model.Items[i].DiscountType == DiscountType.Percentage
+                                ? total - (total * Model.Items[i].Discount / 100)
+                                : total - Model.Items[i].Discount;
+
+                            <tr data-row>
+                                <td>
+                                    @Model.Items[i].ItemId
+                                    <input type="hidden" name="Items[@i].ItemId" value="@Model.Items[i].ItemId" />
+                                </td>
+                                <td>@Model.Items[i].ItemName</td>
+                                <td>@Model.Items[i].UnitName</td>
+                                <td>
+                                    @Model.Items[i].Quantity
+                                    <input type="hidden" name="Items[@i].Quantity" value="@Model.Items[i].Quantity" />
+                                </td>
+                                <td>
+                                    @Model.Items[i].SellingPrice.ToString("0.00")
+                                    <input type="hidden" name="Items[@i].SellingPrice" value="@Model.Items[i].SellingPrice" />
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm discount-type-select" name="Items[@i].DiscountType">
+                                        <option value="0" selected="@(Model.Items[i].DiscountType == DiscountType.Value)">Value</option>
+                                        <option value="1" selected="@(Model.Items[i].DiscountType == DiscountType.Percentage)">Percentage</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" class="form-control form-control-sm discount-input"
+                                           name="Items[@i].Discount" value="@Model.Items[i].Discount" />
+                                </td>
+                                <td class="row-total">@total.ToString("0.00")</td>
+                                <td class="row-balance">@balance.ToString("0.00")</td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -198,6 +198,19 @@
                 <input id="theRestPreview" class="form-control" disabled />
             </div>
         </div>
+        <div class="form-row" id="dueDateRow">
+            <label asp-for="DueDate"></label>
+            <div class="flex-grow-1">
+                <input asp-for="DueDate" type="date" class="form-control" />
+                <span asp-validation-for="DueDate" class="text-danger"></span>
+                <small class="text-muted d-block">Optional. The client is emailed a reminder before this date and again if it passes unpaid (needs an email on the client).</small>
+                <div class="d-flex gap-1 mt-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="7">+7 days</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="15">+15 days</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="30">+30 days</button>
+                </div>
+            </div>
+        </div>
 
         <div class="form-actions">
             <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
@@ -218,6 +231,8 @@
         const itemsTableBody = document.getElementById('itemsTableBody');
         const itemError = document.getElementById('itemError');
         const stockHint = document.getElementById('stockHint');
+        const dueDateRow = document.getElementById('dueDateRow');
+        const dueDateInput = document.getElementById('DueDate');
 
         const MAX_PRICE = 10000000, MAX_QTY = 1000000;
         const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -234,7 +249,7 @@
         }
 
         // ---------- لما يختار صنف: نجيب سعره ووحدته ----------
-        itemSelect.addEventListener('change', function() {
+        itemSelect.addEventListener('change', function () {
             itemError.textContent = '';
             sellingPriceInput.dataset.stock = '';
             stockHint.textContent = '';
@@ -262,7 +277,7 @@
         quantityInput.addEventListener('input', updateTotalPreview);
 
         // ---------- زرار Add: بيضيف صف جديد للجدول ----------
-        document.getElementById('addItemBtn').addEventListener('click', function() {
+        document.getElementById('addItemBtn').addEventListener('click', function () {
             itemError.textContent = '';
 
             const itemId = itemSelect.value;
@@ -289,22 +304,22 @@
             const row = document.createElement('tr');
             row.setAttribute('data-row', '');
             row.innerHTML = `
-                        <td>${itemId}<input type="hidden" name="Items[${index}].ItemId" value="${itemId}" /></td>
-                        <td>${esc(itemName)}</td>
-                        <td>${esc(unitName)}</td>
-                        <td>${qty}<input type="hidden" name="Items[${index}].Quantity" value="${qty}" /></td>
-                        <td>${price.toFixed(2)}<input type="hidden" name="Items[${index}].SellingPrice" value="${price}" /></td>
-                        <td>
-                            <select class="form-select form-select-sm discount-type-select" name="Items[${index}].DiscountType">
-                                <option value="0" selected>Value</option>
-                                <option value="1">Percentage</option>
-                            </select>
-                        </td>
-                        <td><input type="number" step="0.01" class="form-control form-control-sm discount-input" name="Items[${index}].Discount" value="0" /></td>
-                        <td class="row-total">${total.toFixed(2)}</td>
-                        <td class="row-balance">${total.toFixed(2)}</td>
-                        <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
-                    `;
+                                <td>${itemId}<input type="hidden" name="Items[${index}].ItemId" value="${itemId}" /></td>
+                                <td>${esc(itemName)}</td>
+                                <td>${esc(unitName)}</td>
+                                <td>${qty}<input type="hidden" name="Items[${index}].Quantity" value="${qty}" /></td>
+                                <td>${price.toFixed(2)}<input type="hidden" name="Items[${index}].SellingPrice" value="${price}" /></td>
+                                <td>
+                                    <select class="form-select form-select-sm discount-type-select" name="Items[${index}].DiscountType">
+                                        <option value="0" selected>Value</option>
+                                        <option value="1">Percentage</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.01" class="form-control form-control-sm discount-input" name="Items[${index}].Discount" value="0" /></td>
+                                <td class="row-total">${total.toFixed(2)}</td>
+                                <td class="row-balance">${total.toFixed(2)}</td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+                            `;
             itemsTableBody.appendChild(row);
 
             // إعادة تعيين فورم الإضافة
@@ -319,17 +334,17 @@
         });
 
         // ---------- تغيير الخصم أو نوعه في أي صف ----------
-        itemsTableBody.addEventListener('input', function(e) {
+        itemsTableBody.addEventListener('input', function (e) {
             if (!e.target.classList.contains('discount-input')) return;
             recalculateAll();
         });
-        itemsTableBody.addEventListener('change', function(e) {
+        itemsTableBody.addEventListener('change', function (e) {
             if (!e.target.classList.contains('discount-type-select')) return;
             recalculateAll();
         });
 
         // ---------- حذف صف ----------
-        itemsTableBody.addEventListener('click', function(e) {
+        itemsTableBody.addEventListener('click', function (e) {
             if (!e.target.classList.contains('remove-row-btn')) return;
             e.target.closest('tr').remove();
             recalculateAll();
@@ -385,10 +400,22 @@
 
             document.getElementById('theNetPreview').value = net.toFixed(2);
             document.getElementById('theRestPreview').value = rest.toFixed(2);
+
+            // ميعاد السداد منطقي بس لو فيه متبقي
+            dueDateRow.style.display = rest > 0 ? '' : 'none';
+            if (rest <= 0) dueDateInput.value = '';
         }
 
+        // أزرار سريعة: +7 / +15 / +30 يوم من تاريخ الفاتورة
+        document.querySelectorAll('.due-days-btn').forEach(btn => btn.addEventListener('click', function () {
+            const billDate = document.getElementById('BillDate').value;
+            const d = billDate ? new Date(billDate + 'T00:00:00Z') : new Date();
+            d.setUTCDate(d.getUTCDate() + parseInt(this.dataset.days));
+            dueDateInput.value = d.toISOString().slice(0, 10);
+        }));
+
         // اليوزر كتب في Percentage -> هي بقت المصدر، Value بتتحدث للعرض بس
-        percentageInput.addEventListener('input', function() {
+        percentageInput.addEventListener('input', function () {
             discountTypeInput.value = '1';
             const billsTotal = currentBillsTotal();
             const pct = parseFloat(this.value) || 0;
@@ -397,7 +424,7 @@
         });
 
         // اليوزر كتب في Value -> هي بقت المصدر، Percentage بتتحدث للعرض بس
-        valueDiscountInput.addEventListener('input', function() {
+        valueDiscountInput.addEventListener('input', function () {
             discountTypeInput.value = '0';
             const billsTotal = currentBillsTotal();
             const val = parseFloat(this.value) || 0;
@@ -405,7 +432,7 @@
             recalculateOtherDetails(billsTotal);
         });
 
-        paidUpInput.addEventListener('input', function() {
+        paidUpInput.addEventListener('input', function () {
             recalculateOtherDetails(currentBillsTotal());
         });
 

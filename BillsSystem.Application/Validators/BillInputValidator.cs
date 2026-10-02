@@ -39,6 +39,14 @@ namespace BillsSystem.Application.Validators
 
             RuleFor(x => x.PaidUp)
                 .GreaterThanOrEqualTo(0).WithMessage("Paid Up Must be Greater than or equal Zero");
+
+            // اختياري: ميعاد السداد لازم يكون من تاريخ الفاتورة وطالع
+            RuleFor(x => x.DueDate)
+                .Must((x, due) => due!.Value.Date >= x.BillDate.Date)
+                    .WithMessage("DUE DATE can't be before the bill date")
+                .Must((x, due) => due!.Value.Date <= x.BillDate.Date.AddYears(5))
+                    .WithMessage("DUE DATE is too far from the bill date")
+                .When(x => x.DueDate.HasValue);
         }
     }
 }

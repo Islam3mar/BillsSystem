@@ -20,7 +20,49 @@
     <div class="row mb-3">
         <div class="col-md-4"><strong>Bill Date:</strong> @Model.BillDate.ToString("yyyy/MM/dd")</div>
         <div class="col-md-4"><strong>Client:</strong> @Model.Client.Name</div>
+        <div class="col-md-4">
+            <strong>Due Date:</strong>
+            @if (Model.DueDate.HasValue)
+            {
+                <span>@Model.DueDate.Value.ToString("yyyy/MM/dd")</span>
+                if (Model.TheRest > 0 && Model.DueDate.Value.Date < AppClock.Today)
+                {
+                    <span class="badge bg-danger">Overdue</span>
+                }
+            }
+            else
+            {
+                <span class="text-muted">Not set</span>
+            }
+        </div>
     </div>
+
+    @if (Model.DueDate.HasValue && Model.TheRest > 0)
+    {
+        <div class="mb-3 small">
+            @if (Model.LastReminderSentAt.HasValue)
+            {
+                <span class="text-muted">Last reminder: @Model.LastReminderSentAt.Value.ToString("yyyy/MM/dd HH:mm") (@Model.LastReminderType)</span>
+            }
+            else
+            {
+                <span class="text-muted">No reminder sent yet.</span>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Client.Email))
+            {
+                <form asp-action="SendReminder" asp-route-id="@Model.Id" method="post" class="d-inline ms-2"
+                      onsubmit="return confirm('Send a reminder email to @Model.Client.Email now?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-envelope"></i> Send reminder now</button>
+                </form>
+            }
+            else
+            {
+                <span class="text-muted ms-2">(This client has no email — add one from the Clients page to enable reminders.)</span>
+            }
+        </div>
+    }
 
     <div class="list-card mb-3">
         <table class="table table-bordered mb-0">
@@ -132,29 +174,29 @@
             </div>
         </form>
         <script>
-                // منع الضغط المزدوج على Add Payment
-                document.getElementById('paymentForm').addEventListener('submit', function() {
+                    // منع الضغط المزدوج على Add Payment
+                    document.getElementById('paymentForm').addEventListener('submit', function() {
+                        this.querySelector('button[type=submit]').disabled = true;
+                });
+        </script>
+        <form asp-action="PayWithStripe" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end mt-2" id="stripePaymentForm">
+            @Html.AntiForgeryToken()
+            <div class="col-auto">
+                <label class="form-label small text-muted">STRIPE AMOUNT (max @Model.TheRest.ToString("0.00"))</label>
+                <input name="amount" type="number" step="0.01" min="0.01"
+                       max="@Model.TheRest.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                       value="@Model.TheRest.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
+                       class="form-control" required />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-credit-card"></i> Pay with Stripe</button>
+            </div>
+        </form>
+        <script>
+                document.getElementById('stripePaymentForm').addEventListener('submit', function () {
                     this.querySelector('button[type=submit]').disabled = true;
                 });
         </script>
-<form asp-action="PayWithStripe" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end mt-2" id="stripePaymentForm">
-    @Html.AntiForgeryToken()
-    <div class="col-auto">
-        <label class="form-label small text-muted">STRIPE AMOUNT (max @Model.TheRest.ToString("0.00"))</label>
-        <input name="amount" type="number" step="0.01" min="0.01"
-               max="@Model.TheRest.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-               value="@Model.TheRest.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"
-               class="form-control" required />
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-credit-card"></i> Pay with Stripe</button>
-    </div>
-</form>
-<script>
-    document.getElementById('stripePaymentForm').addEventListener('submit', function () {
-        this.querySelector('button[type=submit]').disabled = true;
-    });
-</script>
     }
     else
     {

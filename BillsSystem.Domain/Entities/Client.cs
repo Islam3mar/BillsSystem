@@ -15,6 +15,12 @@ namespace BillsSystem.Domain.Entities
         // أقصى دين مسموح للعميل (null = من غير حد). بيتحسب على مجموع TheRest لكل فواتيره
         public decimal? MaxCreditLimit { get; set; }
 
+        // اختياري: لو موجود بيتبعتله تذكيرات السداد وتنبيه سقف الدين
+        public string? Email { get; set; }
+
+        // آخر مرة اتبعتله إيميل "وصلت لسقف الدين" (عشان منبعتش إيميل مع كل فاتورة)
+        public DateTime? LastCreditLimitEmailAt { get; set; }
+
         // خاصية محسوبة مش متخزنة في الداتابيز (Ignored في الـ Configuration)
         public string Network => EgyptianMobilePrefixHelper.GetNetworkName(Phone) ?? "-";
     }

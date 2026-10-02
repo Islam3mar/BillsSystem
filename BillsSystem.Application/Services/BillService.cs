@@ -11,6 +11,7 @@ using BillsSystem.Domain.Specifications;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace BillsSystem.Application.Services
 {
@@ -22,16 +23,21 @@ namespace BillsSystem.Application.Services
 
         private readonly IStripeCheckoutService _stripeCheckoutService;
         private readonly INotificationService _notifications;
+        private readonly IClientEmailService _clientEmails;
+        private readonly ReminderSettings _reminderSettings;
 
         public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator,
             ILogger<BillService> logger, IStripeCheckoutService stripeCheckoutService,
-            INotificationService notifications)
+            INotificationService notifications, IClientEmailService clientEmails,
+            IOptions<ReminderSettings> reminderSettings)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
             _stripeCheckoutService = stripeCheckoutService;
             _notifications = notifications;
+            _clientEmails = clientEmails;
+            _reminderSettings = reminderSettings.Value;
         }
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
@@ -165,15 +171,17 @@ namespace BillsSystem.Application.Services
 
             // ---------- سقف الدين: الفاتورة اللي هتزوّد الدين ومش هتتحفظ لو هتعدّي الحد ----------
             var newDebt = theNet - paidUp;
+            decimal currentDebt = 0;
             if (client.MaxCreditLimit is decimal limit && newDebt > 0)
             {
-                var currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(client.Id);
+                currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(client.Id);
                 if (currentDebt + newDebt > limit)
                 {
                     var available = Math.Max(0, limit - currentDebt);
                     result.ClientError = $"Credit limit exceeded for '{client.Name}'. Limit: {limit:0.00}, current debt: {currentDebt:0.00}, " +
                                          $"this bill adds: {newDebt:0.00}. Available credit: {available:0.00}. Increase Paid Up or ask the client to settle part of the debt first";
                     await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Alert, $"Bill rejected: '{client.Name}' exceeded the credit limit ({limit:0.00}). Current debt: {currentDebt:0.00}, this bill adds: {newDebt:0.00}", client.Id);
+                    await TryEmailClientCreditAsync(client, limit, currentDebt);
                     return result;
                 }
             }
@@ -191,7 +199,10 @@ namespace BillsSystem.Application.Services
                 ValueDiscount = valueDiscount,
                 TheNet = theNet,
                 PaidUp = paidUp,
-                TheRest = theNet - paidUp
+                TheRest = theNet - paidUp,
+
+                // ميعاد السداد بيتحفظ بس لو فيه متبقي فعلًا
+                DueDate = newDebt > 0 ? input.DueDate?.Date : null
             };
 
             if (paidUp > 0)
@@ -237,6 +248,15 @@ namespace BillsSystem.Application.Services
             result.Bill = bill;
             await _notifications.NotifyAsync(NotificationType.Bill, NotificationAction.Created, $"Bill #{bill.Id} created for '{client.Name}' - Net: {theNet:0.00}, Rest: {bill.TheRest:0.00}", bill.Id);
             result.BillId = bill.Id;
+
+            // الدين بعد الفاتورة وصل (أو قرّب من) سقف العميل → إيميل تنبيه له
+            if (client.MaxCreditLimit is decimal creditLimit && newDebt > 0)
+            {
+                var debtAfter = currentDebt + newDebt;
+                if (debtAfter >= creditLimit * _reminderSettings.CreditWarningPercent / 100m)
+                    await TryEmailClientCreditAsync(client, creditLimit, debtAfter);
+            }
+
             return result;
         }
 
@@ -337,6 +357,8 @@ namespace BillsSystem.Application.Services
             {
                 await _unitOfWork.SaveChangesAsync();
                 await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, $"Payment of {payment.Amount:0.00} voided on bill #{bill.Id} ({bill.Client.Name})", bill.Id);
+                // إلغاء الدفعة زوّد دين العميل: لو وصل لنسبة التحذير أو عدّى السقف، نبلّغ الأدمن والعميل
+                await NotifyIfCreditLimitReachedAsync(bill.Client);
                 return (true, null);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -423,6 +445,51 @@ namespace BillsSystem.Application.Services
         //------------------------------------------------------------------------------------------
 
 
+        // إيميل للعميل: وصل (أو قرّب من) سقف الدين. فيه Cooldown عشان منبعتش إيميل مع كل فاتورة، وفشله مبيكسرش العملية
+        private async Task TryEmailClientCreditAsync(Client client, decimal limit, decimal currentDebt)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(client.Email) || !_clientEmails.IsEnabled) return;
+
+                var now = AppClock.Now;
+                if (client.LastCreditLimitEmailAt is DateTime last &&
+                    (now - last).TotalHours < _reminderSettings.CreditEmailCooldownHours) return;
+
+                if (!await _clientEmails.SendCreditLimitAsync(client.Email, client.Name, limit, currentDebt)) return;
+
+                client.LastCreditLimitEmailAt = now;
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Couldn't send the credit-limit email to client {ClientId}", client.Id);
+            }
+        }
+
+        // بعد أي عملية بتزوّد دين العميل (زي إلغاء دفعة): لو الدين وصل لنسبة التحذير أو عدّى السقف
+        // → تنبيه داخلي للأدمن + إيميل للعميل (بنفس الـ Cooldown). مبتمنعش العملية، وفشلها مبيكسرهاش
+        private async Task NotifyIfCreditLimitReachedAsync(Client client)
+        {
+            try
+            {
+                if (client.MaxCreditLimit is not decimal limit) return;
+
+                var debt = await _unitOfWork.Bills.GetClientOutstandingAsync(client.Id);
+                if (debt < limit * _reminderSettings.CreditWarningPercent / 100m) return;
+
+                var state = debt > limit ? "exceeded" : debt >= limit ? "reached" : "is close to";
+                await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Alert,
+                    $"'{client.Name}' {state} the credit limit after a debt increase. Current debt: {debt:0.00}, limit: {limit:0.00}", client.Id);
+
+                await TryEmailClientCreditAsync(client, limit, debt);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Couldn't run the credit-limit check for client {ClientId}", client.Id);
+            }
+        }
+
         private static void MapValidationErrors(FluentValidation.Results.ValidationResult validation, BillResult result)
         {
             var rowErrors = new Dictionary<int, BillItemRowError>();
@@ -460,6 +527,7 @@ namespace BillsSystem.Application.Services
                     case nameof(BillInput.PercentageDiscount): result.PercentageDiscountError = error.ErrorMessage; break;
                     case nameof(BillInput.PaidUp): result.PaidUpError = error.ErrorMessage; break;
                     case nameof(BillInput.ValueDiscount): result.ValueDiscountError = error.ErrorMessage; break;
+                    case nameof(BillInput.DueDate): result.DueDateError = error.ErrorMessage; break;
                 }
             }
 
