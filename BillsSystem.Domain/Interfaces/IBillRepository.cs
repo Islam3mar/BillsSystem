@@ -15,6 +15,9 @@ namespace BillsSystem.Domain.Interfaces
 
         Task<decimal> GetTotalOutstandingAsync();
 
+        // مجموع المتبقي (TheRest) على عميل معين من كل فواتيره غير المحذوفة
+        Task<decimal> GetClientOutstandingAsync(int clientId);
+
         // التقارير كلها بتتحسب في SQL (مفيش تحميل للفواتير في الذاكرة)
         Task<SalesTotalsRow> GetSalesTotalsAsync(DateTime from, DateTime to);
         Task<List<BillSummaryRow>> GetBillSummariesAsync(DateTime from, DateTime to);

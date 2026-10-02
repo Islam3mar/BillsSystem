@@ -29,7 +29,8 @@ namespace BillsSystem.Web.Controllers
             {
                 Name = model.Name,
                 Phone = model.Phone,
-                Address = model.Address
+                Address = model.Address,
+                MaxCreditLimit = model.MaxCreditLimit
             });
 
             if (!result.Success)
@@ -37,6 +38,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.NameError != null) ModelState.AddModelError(nameof(model.Name), result.NameError);
                 if (result.PhoneError != null) ModelState.AddModelError(nameof(model.Phone), result.PhoneError);
                 if (result.AddressError != null) ModelState.AddModelError(nameof(model.Address), result.AddressError);
+                if (result.MaxCreditLimitError != null) ModelState.AddModelError(nameof(model.MaxCreditLimit), result.MaxCreditLimitError);
                 return View(model);
             }
 
@@ -54,7 +56,8 @@ namespace BillsSystem.Web.Controllers
                 Id = client.Id,
                 Name = client.Name,
                 Phone = client.Phone,
-                Address = client.Address
+                Address = client.Address,
+                MaxCreditLimit = client.MaxCreditLimit
             });
         }
 
@@ -66,7 +69,8 @@ namespace BillsSystem.Web.Controllers
             {
                 Name = model.Name,
                 Phone = model.Phone,
-                Address = model.Address
+                Address = model.Address,
+                MaxCreditLimit = model.MaxCreditLimit
             });
 
             if (!result.Success)
@@ -74,6 +78,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.NameError != null) ModelState.AddModelError(nameof(model.Name), result.NameError);
                 if (result.PhoneError != null) ModelState.AddModelError(nameof(model.Phone), result.PhoneError);
                 if (result.AddressError != null) ModelState.AddModelError(nameof(model.Address), result.AddressError);
+                if (result.MaxCreditLimitError != null) ModelState.AddModelError(nameof(model.MaxCreditLimit), result.MaxCreditLimitError);
                 return View(model);
             }
 

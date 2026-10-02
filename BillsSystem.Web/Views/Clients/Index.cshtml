@@ -26,13 +26,14 @@
                 <th>Phone</th>
                 <th>Network</th>
                 <th>Address</th>
+                <th>Credit Limit</th>
                 <th class="text-center">Actions</th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.Any())
             {
-                <tr><td colspan="6" class="text-center text-muted py-4">No clients added yet</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">No clients added yet</td></tr>
             }
             @foreach (var client in Model)
             {
@@ -42,6 +43,7 @@
                     <td>@client.Phone</td>
                     <td><span class="badge bg-secondary">@client.Network</span></td>
                     <td>@client.Address</td>
+                    <td>@(client.MaxCreditLimit.HasValue ? client.MaxCreditLimit.Value.ToString("N2") : "No limit")</td>
                     <td class="text-center">
                         <a asp-action="Edit" asp-route-id="@client.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <form asp-action="Delete" asp-route-id="@client.Id" method="post" class="d-inline"

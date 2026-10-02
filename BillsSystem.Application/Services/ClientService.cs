@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
@@ -39,7 +40,8 @@ namespace BillsSystem.Application.Services
             {
                 Name = input.Name.Trim(),
                 Phone = input.Phone.Trim(),
-                Address = input.Address.Trim()
+                Address = input.Address.Trim(),
+                MaxCreditLimit = input.MaxCreditLimit.HasValue ? Money.Round(input.MaxCreditLimit.Value) : null
             };
 
             await _unitOfWork.Clients.AddAsync(client);
@@ -71,6 +73,7 @@ namespace BillsSystem.Application.Services
             client.Name = input.Name.Trim();
             client.Phone = input.Phone.Trim();
             client.Address = input.Address.Trim();
+            client.MaxCreditLimit = input.MaxCreditLimit.HasValue ? Money.Round(input.MaxCreditLimit.Value) : null;
 
             try { await _unitOfWork.SaveChangesAsync(); }
             catch (DbUpdateException ex)
@@ -118,6 +121,7 @@ namespace BillsSystem.Application.Services
                         case nameof(input.Name): result.NameError = error.ErrorMessage; break;
                         case nameof(input.Phone): result.PhoneError = error.ErrorMessage; break;
                         case nameof(input.Address): result.AddressError = error.ErrorMessage; break;
+                        case nameof(input.MaxCreditLimit): result.MaxCreditLimitError = error.ErrorMessage; break;
                     }
                 }
                 return result;
