@@ -4,6 +4,7 @@ using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,15 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<CompanyInput> _validator;
         private readonly ILogger<CompanyService> _logger;
+        private readonly INotificationService _notifications;
 
-        public CompanyService(IUnitOfWork unitOfWork, IValidator<CompanyInput> validator, ILogger<CompanyService> logger)
+        public CompanyService(IUnitOfWork unitOfWork, IValidator<CompanyInput> validator, ILogger<CompanyService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<Company>> GetAllCompaniesAsync()
@@ -51,6 +55,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Company, NotificationAction.Created, $"Company added: {company.Name}", company.Id);
             result.Company = company;
             return result;
         }
@@ -79,6 +84,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Company, NotificationAction.Updated, $"Company updated: {company.Name}", company.Id);
             result.Company = company;
             return result;
         }
@@ -93,6 +99,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Company, NotificationAction.Deleted, $"Company deleted: {company.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)

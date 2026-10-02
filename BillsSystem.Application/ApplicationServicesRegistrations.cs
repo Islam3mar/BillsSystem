@@ -23,6 +23,7 @@ namespace BillsSystem.Application
             services.AddScoped<IBillService, BillService>();
             services.AddScoped<ISalesReportService, SalesReportService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<INotificationService, NotificationService>();
 
             services.AddValidatorsFromAssemblyContaining<CompanyInputValidator>();
 

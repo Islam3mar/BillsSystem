@@ -5,6 +5,7 @@ using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -18,12 +19,15 @@ namespace BillsSystem.Application.Services
         private readonly IValidator<ItemInput> _validator;
 
         private readonly ILogger<ItemService> _logger;
+        private readonly INotificationService _notifications;
 
-        public ItemService(IUnitOfWork unitOfWork, IValidator<ItemInput> validator, ILogger<ItemService> logger)
+        public ItemService(IUnitOfWork unitOfWork, IValidator<ItemInput> validator, ILogger<ItemService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<Item>> GetAllAsync()
@@ -59,6 +63,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Item, NotificationAction.Created, $"Item added: {item.Name}", item.Id);
             result.Item = item;
             return result;
         }
@@ -107,6 +112,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Item, NotificationAction.Updated, $"Item updated: {item.Name}", item.Id);
             result.Item = item;
             return result;
         }
@@ -121,6 +127,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Item, NotificationAction.Deleted, $"Item deleted: {item.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)

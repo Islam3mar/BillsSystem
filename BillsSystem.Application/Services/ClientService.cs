@@ -5,6 +5,7 @@ using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -17,12 +18,15 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<ClientInput> _validator;
         private readonly ILogger<ClientService> _logger;
+        private readonly INotificationService _notifications;
 
-        public ClientService(IUnitOfWork unitOfWork, IValidator<ClientInput> validator, ILogger<ClientService> logger)
+        public ClientService(IUnitOfWork unitOfWork, IValidator<ClientInput> validator, ILogger<ClientService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<Client>> GetAllAsync()
@@ -54,6 +58,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Created, $"Client added: {client.Name}", client.Id);
             result.Client = client;
             return result;
         }
@@ -84,6 +89,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Updated, $"Client updated: {client.Name}", client.Id);
             result.Client = client;
             return result;
         }
@@ -98,6 +104,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Deleted, $"Client deleted: {client.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)

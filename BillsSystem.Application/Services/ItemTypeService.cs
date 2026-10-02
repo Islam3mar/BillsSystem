@@ -4,6 +4,7 @@ using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,15 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<ItemTypeInput> _validator;
         private readonly ILogger<ItemTypeService> _logger;
+        private readonly INotificationService _notifications;
 
-        public ItemTypeService(IUnitOfWork unitOfWork, IValidator<ItemTypeInput> validator, ILogger<ItemTypeService> logger)
+        public ItemTypeService(IUnitOfWork unitOfWork, IValidator<ItemTypeInput> validator, ILogger<ItemTypeService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<ItemType>> GetAllAsync()
@@ -55,6 +59,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.ItemType, NotificationAction.Created, $"Type added: {itemType.Name}", itemType.Id);
             result.ItemType = itemType;
             return result;
         }
@@ -84,6 +89,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.ItemType, NotificationAction.Updated, $"Type updated: {itemType.Name}", itemType.Id);
             result.ItemType = itemType;
             return result;
         }
@@ -98,6 +104,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.ItemType, NotificationAction.Deleted, $"Type deleted: {itemType.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)

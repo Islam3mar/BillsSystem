@@ -26,6 +26,7 @@ namespace BillsSystem.Infrastructure.Data
         public DbSet<Bill> Bills => Set<Bill>();
         public DbSet<BillItem> BillItems => Set<BillItem>();
         public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

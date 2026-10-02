@@ -4,6 +4,7 @@ using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,15 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<UnitInput> _validator;
         private readonly ILogger<UnitService> _logger;
+        private readonly INotificationService _notifications;
 
-        public UnitService(IUnitOfWork unitOfWork, IValidator<UnitInput> validator, ILogger<UnitService> logger)
+        public UnitService(IUnitOfWork unitOfWork, IValidator<UnitInput> validator, ILogger<UnitService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<Unit>> GetAllUnitsAsync()
@@ -51,6 +55,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Unit, NotificationAction.Created, $"Unit added: {unit.Name}", unit.Id);
             result.Unit = unit;
             return result;
         }
@@ -79,6 +84,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Unit, NotificationAction.Updated, $"Unit updated: {unit.Name}", unit.Id);
             result.Unit = unit;
             return result;
         }
@@ -93,6 +99,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Unit, NotificationAction.Deleted, $"Unit deleted: {unit.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)
