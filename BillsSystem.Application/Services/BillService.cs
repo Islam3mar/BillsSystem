@@ -21,14 +21,17 @@ namespace BillsSystem.Application.Services
         private readonly ILogger<BillService> _logger;
 
         private readonly IStripeCheckoutService _stripeCheckoutService;
+        private readonly INotificationService _notifications;
 
         public BillService(IUnitOfWork unitOfWork, IValidator<BillInput> validator,
-            ILogger<BillService> logger, IStripeCheckoutService stripeCheckoutService)
+            ILogger<BillService> logger, IStripeCheckoutService stripeCheckoutService,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
             _stripeCheckoutService = stripeCheckoutService;
+            _notifications = notifications;
         }
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
@@ -170,6 +173,7 @@ namespace BillsSystem.Application.Services
                     var available = Math.Max(0, limit - currentDebt);
                     result.ClientError = $"Credit limit exceeded for '{client.Name}'. Limit: {limit:0.00}, current debt: {currentDebt:0.00}, " +
                                          $"this bill adds: {newDebt:0.00}. Available credit: {available:0.00}. Increase Paid Up or ask the client to settle part of the debt first";
+                    await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Alert, $"Bill rejected: '{client.Name}' exceeded the credit limit ({limit:0.00}). Current debt: {currentDebt:0.00}, this bill adds: {newDebt:0.00}", client.Id);
                     return result;
                 }
             }
@@ -231,6 +235,7 @@ namespace BillsSystem.Application.Services
 
             result.Success = true;
             result.Bill = bill;
+            await _notifications.NotifyAsync(NotificationType.Bill, NotificationAction.Created, $"Bill #{bill.Id} created for '{client.Name}' - Net: {theNet:0.00}, Rest: {bill.TheRest:0.00}", bill.Id);
             result.BillId = bill.Id;
             return result;
         }
@@ -254,6 +259,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Bill, NotificationAction.Deleted, $"Bill #{bill.Id} for '{bill.Client.Name}' was deleted", bill.Id);
                 return (true, null);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -291,6 +297,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Created, $"Payment of {amount:0.00} added to bill #{bill.Id} ({bill.Client.Name})", bill.Id);
                 return (true, null);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -329,6 +336,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, $"Payment of {payment.Amount:0.00} voided on bill #{bill.Id} ({bill.Client.Name})", bill.Id);
                 return (true, null);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -402,6 +410,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Created, $"Stripe payment of {amount:0.00} received for bill #{bill.Id} ({bill.Client.Name})", bill.Id);
                 return (true, null);
             }
             catch (DbUpdateException ex)

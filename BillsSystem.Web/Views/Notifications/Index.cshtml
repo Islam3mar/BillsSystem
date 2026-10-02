@@ -1,0 +1,64 @@
+﻿@model BillsSystem.Application.DTOs.PagedResult<BillsSystem.Web.ViewModels.NotificationViewModel>
+@{
+    ViewData["Title"] = "Notifications";
+    var unreadOnly = (bool)(ViewBag.UnreadOnly ?? false);
+    var unread = (int)(ViewBag.Unread ?? 0);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Notifications @if (unread > 0) {
+        <span class="badge bg-danger ms-1">@unread</span>
+    }
+</h4>
+<div class="d-flex gap-2">
+    <a asp-action="Index" asp-route-unreadOnly="@(!unreadOnly)" class="btn btn-sm btn-outline-secondary">
+        @(unreadOnly ? "Show all" : "Unread only")
+    </a>
+    @if (unread > 0)
+    {
+        <button type="button" class="btn btn-sm btn-save" id="notifMarkAllPage">
+            <i class="bi bi-check2-all"></i> Mark all as read
+        </button>
+    }
+</div>
+</div>
+
+<div class="list-card notif-page">
+    @if (!Model.Items.Any())
+    {
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+            @(unreadOnly ? "No unread notifications" : "No notifications yet")
+        </div>
+    }
+    @foreach (var n in Model.Items)
+    {
+        @* بدون Url الـ href بيتشال تلقائي (Razor بيشيل الـ attribute لو القيمة null) *@
+        <a href="@n.Url" class="notif-item @(n.IsRead ? "" : "unread")" data-notif-id="@n.Id" data-read="@(n.IsRead ? "1" : "0")">
+            <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon"></i></span>
+            <span class="notif-body">
+                <span class="notif-msg">@n.Message</span>
+                <span class="notif-time" title="@n.FullTime">@n.TimeAgo</span>
+            </span>
+            @if (!n.IsRead)
+            {
+                <span class="notif-dot"></span>
+            }
+        </a>
+    }
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination mb-0">
+            <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-unreadOnly="@unreadOnly" asp-route-page="@(Model.Page - 1)">Previous</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link">Page @Model.Page of @Model.TotalPages (@Model.TotalCount notifications)</span></li>
+            <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-unreadOnly="@unreadOnly" asp-route-page="@(Model.Page + 1)">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

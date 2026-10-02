@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site-pro.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
 </head>
 <body>
     <div class="app-shell">
@@ -25,6 +26,23 @@
                 <span class="topbar-brand">BILLS SYSTEM</span>
             </div>
             <div class="topbar-right">
+                <div class="dropdown notif-bell" id="notifBell">
+                    <button type="button" class="notif-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            aria-expanded="false" aria-label="Notifications">
+                        <i class="bi bi-bell"></i>
+                        <span class="notif-badge" id="notifBadge" hidden>0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end notif-menu">
+                        <div class="notif-head">
+                            <strong>Notifications</strong>
+                            <button type="button" id="notifMarkAll" disabled>Mark all as read</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <div class="notif-empty">Loading...</div>
+                        </div>
+                        <a class="notif-foot" asp-controller="Notifications" asp-action="Index">View all</a>
+                    </div>
+                </div>
                 <div class="dropdown topbar-user">
                     <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <span class="topbar-username d-none d-md-inline">@User.Identity?.Name</span>
@@ -109,6 +127,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/site-pro.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script>
             @if (!string.IsNullOrEmpty(successMessage))
                 {

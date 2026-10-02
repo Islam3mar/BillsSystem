@@ -4,6 +4,7 @@ using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using BillsSystem.Domain.Entities;
+using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,15 @@ namespace BillsSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<CategoryInput> _validator;
         private readonly ILogger<CategoryService> _logger;
+        private readonly INotificationService _notifications;
 
-        public CategoryService(IUnitOfWork unitOfWork, IValidator<CategoryInput> validator, ILogger<CategoryService> logger)
+        public CategoryService(IUnitOfWork unitOfWork, IValidator<CategoryInput> validator, ILogger<CategoryService> logger,
+            INotificationService notifications)
         {
             _unitOfWork = unitOfWork;
             _validator = validator;
             _logger = logger;
+            _notifications = notifications;
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync()
@@ -52,6 +56,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Category, NotificationAction.Created, $"Category added: {category.Name}", category.Id);
             result.Category = category;
             return result;
         }
@@ -81,6 +86,7 @@ namespace BillsSystem.Application.Services
             }
 
             result.Success = true;
+            await _notifications.NotifyAsync(NotificationType.Category, NotificationAction.Updated, $"Category updated: {category.Name}", category.Id);
             result.Category = category;
             return result;
         }
@@ -95,6 +101,7 @@ namespace BillsSystem.Application.Services
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Category, NotificationAction.Deleted, $"Category deleted: {category.Name}", null);
                 return (true, null);
             }
             catch (DbUpdateException ex)

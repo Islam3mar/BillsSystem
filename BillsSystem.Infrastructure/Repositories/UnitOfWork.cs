@@ -19,6 +19,7 @@ namespace BillsSystem.Infrastructure.Repositories
         private IItemRepository? _items;
         private IClientRepository? _clients;
         private IBillRepository? _bills;
+        private INotificationRepository? _notifications;
         #endregion
 
         public UnitOfWork(ApplicationDbContext context) => _context = context;
@@ -33,6 +34,7 @@ namespace BillsSystem.Infrastructure.Repositories
         public IItemRepository Items => _items ??= new ItemRepository(_context);
         public IClientRepository Clients => _clients ??= new ClientRepository(_context);
         public IBillRepository Bills => _bills ??= new BillRepository(_context);
+        public INotificationRepository Notifications => _notifications ??= new NotificationRepository(_context);
         #endregion
 
         public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();

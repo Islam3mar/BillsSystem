@@ -14,6 +14,8 @@ namespace BillsSystem.Domain.Interfaces
         IClientRepository Clients { get; }
         IBillRepository Bills { get; }
 
+        INotificationRepository Notifications { get; }
+
         Task<int> SaveChangesAsync();
     }
 }
