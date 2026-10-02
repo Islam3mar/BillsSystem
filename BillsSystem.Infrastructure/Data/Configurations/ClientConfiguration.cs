@@ -18,6 +18,7 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(c => c.Phone).IsRequired().HasMaxLength(11);
             builder.Property(c => c.Address).IsRequired().HasMaxLength(300);
             builder.Property(c => c.MaxCreditLimit).HasPrecision(18, 2);
+            builder.Property(c => c.Email).HasMaxLength(254);   // أقصى طول إيميل حسب المعيار
 
             // خاصية محسوبة runtime بس - مش عمود في الجدول
             builder.Ignore(c => c.Network);

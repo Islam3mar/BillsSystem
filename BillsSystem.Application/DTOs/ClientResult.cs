@@ -13,8 +13,9 @@ namespace BillsSystem.Application.DTOs
         public string? NameError { get; set; }
         public string? PhoneError { get; set; }
         public string? AddressError { get; set; }
+        public string? EmailError { get; set; }
         public string? MaxCreditLimitError { get; set; }
 
-        public bool HasErrors => NameError != null || PhoneError != null || AddressError != null || MaxCreditLimitError != null;
+        public bool HasErrors => NameError != null || PhoneError != null || AddressError != null || EmailError != null || MaxCreditLimitError != null;
     }
 }

@@ -18,12 +18,15 @@ namespace BillsSystem.Web.Controllers
         private readonly IBillService _billService;
         private readonly IClientService _clientService;
         private readonly IItemService _itemService;
+        private readonly IReminderService _reminderService;
 
-        public BillsController(IBillService billService, IClientService clientService, IItemService itemService)
+        public BillsController(IBillService billService, IClientService clientService, IItemService itemService,
+            IReminderService reminderService)
         {
             _billService = billService;
             _clientService = clientService;
             _itemService = itemService;
+            _reminderService = reminderService;
         }
 
         public async Task<IActionResult> Index(string? search, int page = 1)
@@ -69,6 +72,7 @@ namespace BillsSystem.Web.Controllers
                 PercentageDiscount = model.PercentageDiscount,
                 ValueDiscount = model.ValueDiscount,
                 PaidUp = model.PaidUp,
+                DueDate = model.DueDate,
                 Items = model.Items.Select(i => new BillItemInput
                 {
                     ItemId = i.ItemId,
@@ -89,6 +93,7 @@ namespace BillsSystem.Web.Controllers
                 if (result.PercentageDiscountError != null) ModelState.AddModelError(nameof(model.PercentageDiscount), result.PercentageDiscountError);
                 if (result.PaidUpError != null) ModelState.AddModelError(nameof(model.PaidUp), result.PaidUpError);
                 if (result.ValueDiscountError != null) ModelState.AddModelError(nameof(model.ValueDiscount), result.ValueDiscountError);
+                if (result.DueDateError != null) ModelState.AddModelError(nameof(model.DueDate), result.DueDateError);
                 if (result.GeneralError != null) ModelState.AddModelError(string.Empty, result.GeneralError);
 
                 foreach (var rowError in result.ItemRowErrors)
@@ -136,6 +141,17 @@ namespace BillsSystem.Web.Controllers
         {
             var (success, error) = await _billService.VoidPaymentAsync(id, paymentId, reason);
             TempData["SuccessMessage"] = success ? "Payment voided successfully" : null;
+            TempData["ErrorMessage"] = success ? null : error;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // بعت تذكير للعميل دلوقتي (من صفحة الفاتورة)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendReminder(int id)
+        {
+            var (success, error) = await _reminderService.SendNowAsync(id);
+            TempData["SuccessMessage"] = success ? "Reminder email sent to the client" : null;
             TempData["ErrorMessage"] = success ? null : error;
             return RedirectToAction(nameof(Details), new { id });
         }

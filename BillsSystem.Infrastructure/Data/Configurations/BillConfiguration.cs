@@ -22,6 +22,11 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(b => b.TheRest).HasColumnType("decimal(18,2)");
             builder.Property(b => b.DiscountType).HasConversion<int>();
 
+            // التذكيرات
+            builder.Property(b => b.DueDate).HasColumnType("date");
+            builder.Property(b => b.LastReminderType).HasConversion<int>();
+            builder.HasIndex(b => b.DueDate);
+
             builder.Property(b => b.RowVersion).IsRowVersion();
 
             builder.HasIndex(b => b.SubmissionId)

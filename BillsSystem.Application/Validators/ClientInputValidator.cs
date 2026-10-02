@@ -29,6 +29,12 @@ namespace BillsSystem.Application.Validators
                 .NotEmpty().WithMessage("Address is Required")
                 .MaximumLength(300).WithMessage("Address must not exceed 300 characters");
 
+            // اختياري: فاضي = العميل مش هيجيله إيميلات
+            RuleFor(x => x.Email)
+                .MaximumLength(254).WithMessage("EMAIL must not exceed 254 characters")
+                .EmailAddress().WithMessage("EMAIL is not a valid email address")
+                .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
             // اختياري: فاضي = من غير حد أقصى للدين
             RuleFor(x => x.MaxCreditLimit)
                 .GreaterThan(0).WithMessage("MAX CREDIT LIMIT must be greater than zero (leave it empty for no limit)")

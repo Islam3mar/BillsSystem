@@ -45,6 +45,7 @@ namespace BillsSystem.Application.Services
                 Name = input.Name.Trim(),
                 Phone = input.Phone.Trim(),
                 Address = input.Address.Trim(),
+                Email = input.Email,
                 MaxCreditLimit = input.MaxCreditLimit.HasValue ? Money.Round(input.MaxCreditLimit.Value) : null
             };
 
@@ -78,6 +79,7 @@ namespace BillsSystem.Application.Services
             client.Name = input.Name.Trim();
             client.Phone = input.Phone.Trim();
             client.Address = input.Address.Trim();
+            client.Email = input.Email;
             client.MaxCreditLimit = input.MaxCreditLimit.HasValue ? Money.Round(input.MaxCreditLimit.Value) : null;
 
             try { await _unitOfWork.SaveChangesAsync(); }
@@ -118,6 +120,9 @@ namespace BillsSystem.Application.Services
         {
             var result = new ClientResult();
 
+            // الإيميل اختياري: فاضي/مسافات = null، وغير كده بيتقص قبل الفحص والحفظ
+            input.Email = string.IsNullOrWhiteSpace(input.Email) ? null : input.Email.Trim();
+
             var validation = await _validator.ValidateAsync(input);
             if (!validation.IsValid)
             {
@@ -128,6 +133,7 @@ namespace BillsSystem.Application.Services
                         case nameof(input.Name): result.NameError = error.ErrorMessage; break;
                         case nameof(input.Phone): result.PhoneError = error.ErrorMessage; break;
                         case nameof(input.Address): result.AddressError = error.ErrorMessage; break;
+                        case nameof(input.Email): result.EmailError = error.ErrorMessage; break;
                         case nameof(input.MaxCreditLimit): result.MaxCreditLimitError = error.ErrorMessage; break;
                     }
                 }

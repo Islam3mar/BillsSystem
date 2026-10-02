@@ -30,6 +30,15 @@
         </div>
 
         <div class="form-row">
+            <label asp-for="Email"></label>
+            <div class="flex-grow-1">
+                <input asp-for="Email" type="email" class="form-control" maxlength="254" placeholder="client@example.com (optional)" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+                <small class="text-muted">Optional. Payment reminders and credit-limit alerts are emailed here.</small>
+            </div>
+        </div>
+
+        <div class="form-row">
             <label>NUMBER</label>
             <div class="flex-grow-1">
                 <input class="form-control" value="@Model.Id" disabled />
