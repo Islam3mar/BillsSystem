@@ -156,6 +156,17 @@ namespace BillsSystem.Web.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        // تحديد ميعاد السداد لفاتورة عليها متبقي ومالهاش ميعاد (مثلًا بعد إلغاء دفعة على فاتورة كانت مدفوعة)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetDueDate(int id, DateTime dueDate)
+        {
+            var (success, error) = await _billService.SetDueDateAsync(id, dueDate);
+            TempData["SuccessMessage"] = success ? "Due date saved" : null;
+            TempData["ErrorMessage"] = success ? null : error;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         // ---------- AJAX: بيتنادى لما اليوزر يختار صنف عشان يجيب سعره ووحدته ومخزونه ----------
         [HttpGet]
         public async Task<JsonResult> GetItemDetails(int itemId)

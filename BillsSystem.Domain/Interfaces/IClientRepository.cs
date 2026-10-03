@@ -8,5 +8,6 @@ namespace BillsSystem.Domain.Interfaces
     public interface IClientRepository : IGenericRepository<Client>
     {
         Task<bool> NameExistsAsync(string name, int? excludeId = null);
+        Task<bool> EmailExistsAsync(string email, int? excludeId = null);
     }
 }

@@ -266,6 +266,10 @@ namespace BillsSystem.Application.Services
             var bill = await _unitOfWork.Bills.GetByIdAsync(id);
             if (bill == null) return (false, "Bill not found");
 
+            // دفعة Stripe شغالة معناها فلوس اتقبضت فعلًا: لازم تتردّ من Stripe وتتلغى هنا الأول
+            if (bill.Payments.Any(p => !p.IsVoided && p.Method == PaymentMethod.Stripe))
+                return (false, "This bill has Stripe payments. Refund them from Stripe and void them here first");
+
             var items = await _unitOfWork.Items.GetByIdsAsync(bill.Items.Select(l => l.ItemId));
             foreach (var line in bill.Items)
             {
@@ -301,7 +305,12 @@ namespace BillsSystem.Application.Services
 
             amount = Money.Round(amount);
             if (amount <= 0) return (false, "Payment amount Must be Greater than Zero");
-            if (amount > bill.TheRest) return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})");
+            if (amount > bill.TheRest)
+            {
+                var msg = $"Payment can't exceed The Rest ({bill.TheRest:0.00})";
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, msg, bill.Id);
+                return (false, msg);
+            }
 
             var date = (paymentDate ?? AppClock.Today).Date;
             if (date < bill.BillDate.Date || date > AppClock.Today)
@@ -346,6 +355,21 @@ namespace BillsSystem.Application.Services
             if (reason == null) return (false, "Void reason is required");
             if (reason.Length > 200) return (false, "Reason must not exceed 200 characters");
 
+            // إلغاء الدفعة بيزوّد دين العميل، فممنوع لو الدين بعدها هيعدّي السقف
+            if (bill.Client.MaxCreditLimit is decimal creditLimit)
+            {
+                var currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(bill.ClientId);
+                var debtAfterVoid = currentDebt + payment.Amount;
+
+                if (debtAfterVoid > creditLimit)
+                {
+                    var available = Math.Max(0, creditLimit - currentDebt);
+                    return (false,
+                        $"Can't void this payment: '{bill.Client.Name}' would owe {debtAfterVoid:0.00}, above the credit limit ({creditLimit:0.00}). " +
+                        $"Available credit: {available:0.00}. Collect other payments from the client, or raise the credit limit from the Clients page first");
+                }
+            }
+
             payment.IsVoided = true;
             payment.VoidedAt = AppClock.Now;
             payment.VoidReason = reason;
@@ -373,6 +397,38 @@ namespace BillsSystem.Application.Services
             }
         }
 
+
+        // تحديد ميعاد السداد لفاتورة عليها متبقي ومالهاش ميعاد (مثلًا بعد إلغاء دفعة على فاتورة كانت مدفوعة بالكامل)
+        public async Task<(bool Success, string? Error)> SetDueDateAsync(int billId, DateTime dueDate)
+        {
+            var bill = await _unitOfWork.Bills.GetByIdAsync(billId);
+            if (bill == null) return (false, "Bill not found");
+            if (bill.TheRest <= 0) return (false, "This bill is fully paid");
+            if (dueDate.Date < bill.BillDate.Date || dueDate.Date > bill.BillDate.Date.AddYears(5))
+                return (false, "Due date is out of the allowed range");
+
+            bill.DueDate = dueDate.Date;
+            bill.LastReminderType = ReminderType.None;
+            bill.LastReminderSentAt = null;
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict while setting due date for bill {BillId}", billId);
+                return (false, "This bill was changed by someone else. Reload and try again");
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Failed to set due date for bill {BillId}", billId);
+                return (false, "Couldn't save the due date. Please try again");
+            }
+        }
+
+
         public async Task<(bool Success, string? Error, string? CheckoutUrl)> CreateStripeCheckoutAsync(
     int billId, decimal amount, string successUrl, string cancelUrl)
         {
@@ -381,7 +437,12 @@ namespace BillsSystem.Application.Services
 
             amount = Money.Round(amount);
             if (amount <= 0) return (false, "Payment amount Must be Greater than Zero", null);
-            if (amount > bill.TheRest) return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})", null);
+            if (amount > bill.TheRest)
+            {
+                var msg = $"Payment can't exceed The Rest ({bill.TheRest:0.00})";
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, msg, bill.Id);
+                return (false, msg, null);
+            }
 
             var (sessionId, url) = await _stripeCheckoutService.CreateCheckoutSessionAsync(billId, amount, successUrl, cancelUrl);
             _logger.LogInformation("Stripe checkout session {SessionId} created for bill {BillId}, amount {Amount}",
@@ -402,19 +463,29 @@ namespace BillsSystem.Application.Services
                 return (true, null);
             }
 
+            amount = Money.Round(amount);
+
             var bill = await _unitOfWork.Bills.GetByIdAsync(billId);
             if (bill == null)
             {
+                // إعادة المحاولة مش هتفيد: نبلّغ الأدمن عشان يرجّع الفلوس من Stripe
                 _logger.LogError("Stripe webhook: bill {BillId} not found for session {SessionId}", billId, stripeSessionId);
-                return (false, "Bill not found");
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                    $"Stripe payment {amount:0.00} arrived for a missing/deleted bill #{billId} (session {stripeSessionId}). Refund it from the Stripe Dashboard", billId);
+                return (true, null);
             }
 
-            amount = Money.Round(amount);
+
 
             // الفلوس اتقبضت فعليًا، فلازم تتسجل حتى لو في سباق نادر زادت عن TheRest الحالي
             if (amount > bill.TheRest)
+            {
                 _logger.LogWarning("Stripe payment {Amount} exceeds TheRest {TheRest} for bill {BillId} — recorded in full, needs review",
                     amount, bill.TheRest, billId);
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                    $"Stripe payment {amount:0.00} exceeds TheRest {bill.TheRest:0.00} for bill #{billId} — recorded in full, needs review",
+                    billId);
+            }
 
             bill.Payments.Add(new Payment
             {
@@ -435,10 +506,13 @@ namespace BillsSystem.Application.Services
                 await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Created, $"Stripe payment of {amount:0.00} received for bill #{bill.Id} ({bill.Client.Name})", bill.Id);
                 return (true, null);
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException ex)   // بيشمل DbUpdateConcurrencyException
             {
+                // Webhookين لنفس الـ Session في نفس اللحظة: الـ Unique Index منع التكرار، فده نجاح مش فشل
+                if (await _unitOfWork.Bills.StripeSessionExistsAsync(stripeSessionId)) return (true, null);
+
                 _logger.LogError(ex, "Failed to save Stripe payment for bill {BillId}, session {SessionId}", billId, stripeSessionId);
-                return (false, "Database error");
+                return (false, "Database error");   // الـ Webhook هيرجّع 500 وStripe هتعيد المحاولة بـ Context جديد
             }
         }
 

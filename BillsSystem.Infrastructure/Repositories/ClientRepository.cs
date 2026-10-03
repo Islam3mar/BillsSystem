@@ -18,5 +18,13 @@ namespace BillsSystem.Infrastructure.Repositories
             return await Query.AnyAsync(c =>
                 c.Name.ToLower() == normalized && (!excludeId.HasValue || c.Id != excludeId.Value));
         }
+
+        // نفس الإيميل مينفعش يتكرر على عميلين (من غير حساسية لحالة الحروف)
+        public async Task<bool> EmailExistsAsync(string email, int? excludeId = null)
+        {
+            var normalized = email.Trim().ToLower();
+            return await Query.AnyAsync(c =>
+                c.Email != null && c.Email.ToLower() == normalized && (!excludeId.HasValue || c.Id != excludeId.Value));
+        }
     }
 }
