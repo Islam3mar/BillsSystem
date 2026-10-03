@@ -20,6 +20,11 @@ namespace BillsSystem.Infrastructure.Data.Configurations
             builder.Property(c => c.MaxCreditLimit).HasPrecision(18, 2);
             builder.Property(c => c.Email).HasMaxLength(254);   // أقصى طول إيميل حسب المعيار
 
+            // الإيميل اختياري (null كتير)، فالـ Unique بيتطبق على الصفوف اللي ليها إيميل بس
+            builder.HasIndex(c => c.Email)
+                   .IsUnique()
+                   .HasFilter("[Email] IS NOT NULL");
+
             // خاصية محسوبة runtime بس - مش عمود في الجدول
             builder.Ignore(c => c.Network);
         }

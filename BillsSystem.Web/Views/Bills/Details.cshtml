@@ -37,6 +37,17 @@
         </div>
     </div>
 
+    @if (Model.TheRest > 0 && !Model.DueDate.HasValue)
+    {
+        <form asp-action="SetDueDate" asp-route-id="@Model.Id" method="post" class="d-flex gap-2 align-items-center mb-3">
+            @Html.AntiForgeryToken()
+            <span class="text-warning small">No due date, so reminders are off for this bill.</span>
+            <input type="date" name="dueDate" min="@Model.BillDate.ToString("yyyy-MM-dd")"
+                   max="@Model.BillDate.AddYears(5).ToString("yyyy-MM-dd")" class="form-control form-control-sm w-auto" required />
+            <button class="btn btn-sm btn-outline-primary">Set due date</button>
+        </form>
+    }
+
     @if (Model.DueDate.HasValue && Model.TheRest > 0)
     {
         <div class="mb-3 small">
@@ -52,7 +63,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.Client.Email))
             {
                 <form asp-action="SendReminder" asp-route-id="@Model.Id" method="post" class="d-inline ms-2"
-                      onsubmit="return confirm('Send a reminder email to @Model.Client.Email now?');">
+                      onsubmit="return confirm('Send a reminder email to this client now?');">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-envelope"></i> Send reminder now</button>
                 </form>
@@ -126,9 +137,16 @@
                 }
                 @foreach (var p in Model.Payments.OrderBy(p => p.PaymentDate).ThenBy(p => p.Id))
                 {
+                    var isStripe = p.Method == PaymentMethod.Stripe;
                     <tr class="@(p.IsVoided ? "text-muted" : "")">
                         <td>@p.PaymentDate.ToString("yyyy/MM/dd")</td>
-                        <td class="@(p.IsVoided ? "text-decoration-line-through" : "")">@p.Amount.ToString("0.00")</td>
+                        <td class="@(p.IsVoided ? "text-decoration-line-through" : "")">
+                            @p.Amount.ToString("0.00")
+                            @if (isStripe)
+                            {
+                                <span class="badge bg-primary">Stripe</span>
+                            }
+                        </td>
                         <td>@p.Notes</td>
                         <td>
                             @if (p.IsVoided)
@@ -139,7 +157,10 @@
                             else
                             {
                                 <form asp-action="VoidPayment" asp-route-id="@Model.Id" asp-route-paymentId="@p.Id" method="post"
-                                      class="d-flex gap-1" onsubmit="return confirm('Void this payment?');">
+                                      class="d-flex gap-1" data-stripe="@(isStripe ? "1" : "0")"
+                                      onsubmit="return confirm(this.dataset.stripe === '1'
+                                    ? 'This is a Stripe payment. Voiding here does NOT refund the client. Refund it from the Stripe Dashboard too. Continue?'
+                                    : 'Void this payment?');">
                                     @Html.AntiForgeryToken()
                                     <input name="reason" maxlength="200" placeholder="Reason" class="form-control form-control-sm" required />
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Void</button>
@@ -174,7 +195,7 @@
             </div>
         </form>
         <script>
-                    // منع الضغط المزدوج على Add Payment
+                        // منع الضغط المزدوج على Add Payment
                     document.getElementById('paymentForm').addEventListener('submit', function() {
                         this.querySelector('button[type=submit]').disabled = true;
                 });

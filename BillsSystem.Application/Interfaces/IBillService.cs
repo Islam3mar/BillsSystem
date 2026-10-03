@@ -14,6 +14,7 @@ namespace BillsSystem.Application.Interfaces
         Task<(bool Success, string? Error)> DeleteAsync(int id);        // Soft delete + إرجاع المخزون
         Task<(bool Success, string? Error)> AddPaymentAsync(int billId, decimal amount, DateTime? paymentDate, string? notes);
         Task<(bool Success, string? Error)> VoidPaymentAsync(int billId, int paymentId, string? reason);
+        Task<(bool Success, string? Error)> SetDueDateAsync(int billId, DateTime dueDate);
 
         Task<(bool Success, string? Error, string? CheckoutUrl)> CreateStripeCheckoutAsync(
     int billId, decimal amount, string successUrl, string cancelUrl);

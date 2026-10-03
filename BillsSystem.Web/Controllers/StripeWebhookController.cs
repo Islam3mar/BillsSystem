@@ -47,18 +47,22 @@ namespace BillsSystem.Web.Controllers
             {
                 var session = stripeEvent.Data.Object as Session;
                 if (session != null && session.PaymentStatus == "paid"
-                    && int.TryParse(session.Metadata.GetValueOrDefault("billId"), out var billId))
+       && int.TryParse(session.Metadata?.GetValueOrDefault("billId"), out var billId))
                 {
-                    var amount = (session.AmountTotal ?? 0) / 100m; // Stripe بيبعت المبلغ بالـ Cents
+                    var amount = (session.AmountTotal ?? 0) / 100m;
                     var (success, error) = await _billService.ConfirmStripePaymentAsync(
                         session.Id, session.PaymentIntentId, amount, billId);
 
                     if (!success)
-                        _logger.LogError("Failed to confirm Stripe payment for session {SessionId}: {Error}",
-                            session.Id, error);
+                    {
+                        _logger.LogError("Failed to confirm Stripe payment for session {SessionId}: {Error}", session.Id, error);
+                        return StatusCode(StatusCodes.Status500InternalServerError);   // Stripe هتعيد المحاولة
+                    }
                 }
+                return Ok();
             }
 
+            // Ensure all code paths return an IActionResult
             return Ok();
         }
     }
