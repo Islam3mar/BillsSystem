@@ -11,19 +11,20 @@
     <title>@ViewData["Title"] - Bills System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site-pro.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/notifications.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 </head>
 <body>
     <div class="app-shell">
         <header class="topbar">
             <div class="topbar-left">
                 <img src="~/images/pioneers-solutions-logo.png" alt="Pioneers" class="topbar-logo" />
-                <span class="topbar-brand">BILLS SYSTEM</span>
+                <span class="topbar-brand">Bills System</span>
             </div>
             <div class="topbar-right">
                 <div class="dropdown notif-bell" id="notifBell">
@@ -70,19 +71,19 @@
 
                     <div class="sidebar-section">Catalog</div>
                     <a class="sidebar-link @(currentController == "Companies" ? "active" : "")" asp-controller="Companies" asp-action="Index">
-                        <i class="bi bi-pencil-square"></i> Company Data
+                        <i class="bi bi-building"></i> Company Data
                     </a>
                     <a class="sidebar-link @(currentController == "Units" ? "active" : "")" asp-controller="Units" asp-action="Index">
-                        <i class="bi bi-grid-3x3-gap"></i> All Units
+                        <i class="bi bi-rulers"></i> All Units
                     </a>
                     <a class="sidebar-link @(currentController == "Items" ? "active" : "")" asp-controller="Items" asp-action="Index">
                         <i class="bi bi-box-seam"></i> Items
                     </a>
                     <a class="sidebar-link @(currentController == "Types" ? "active" : "")" asp-controller="Types" asp-action="Index">
-                        <i class="bi bi-clock-history"></i> Types
+                        <i class="bi bi-tags"></i> Types
                     </a>
                     <a class="sidebar-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">
-                        <i class="bi bi-layers"></i> Categories
+                        <i class="bi bi-folder2"></i> Categories
                     </a>
 
                     <div class="sidebar-section">Sales</div>
@@ -90,12 +91,12 @@
                         <i class="bi bi-people"></i> Clients
                     </a>
                     <a class="sidebar-link @(currentController == "Bills" ? "active" : "")" asp-controller="Bills" asp-action="Index">
-                        <i class="bi bi-sliders2"></i> Sales Invoice
+                        <i class="bi bi-receipt"></i> Sales Invoice
                     </a>
 
                     <div class="sidebar-section">Reports</div>
                     <a class="sidebar-link @(currentController == "SalesReport" ? "active" : "")" asp-controller="SalesReport" asp-action="Index">
-                        <i class="bi bi-arrow-repeat"></i> Sales Report
+                        <i class="bi bi-bar-chart-line"></i> Sales Report
                     </a>
                 </nav>
             </aside>

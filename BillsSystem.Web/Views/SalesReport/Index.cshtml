@@ -3,23 +3,135 @@
 @{
     ViewData["Title"] = "Sales Report";
     var report = ViewBag.Report as SalesReportResult;
+
+    // عرض أسماء الأصناف جوه خلية الفاتورة
+    void Lines(BillSummaryDto b)
+    {
+        foreach (var l in b.Lines)
+        {
+            <div class="bill-line"><span class="bill-line-name">@l.ItemName</span> <span class="bill-line-qty">&times; @l.Quantity</span></div>
+        }
+    }
+    const string Cols = "<colgroup><col style=\"width:5%\"><col style=\"width:9%\"><col style=\"width:13%\"><col style=\"width:21%\"><col style=\"width:10%\"><col style=\"width:8%\"><col style=\"width:9%\"><col style=\"width:9%\"><col style=\"width:9%\"><col style=\"width:7%\"></colgroup>";
 }
 
 <style>
+    .bills-table {
+        table-layout: fixed;
+    }
+
+    .bill-line {
+        line-height: 1.5;
+    }
+
+    .bill-line-name {
+        font-weight: 500;
+    }
+
+    .bill-line-qty {
+        color: var(--muted);
+        font-size: .85em;
+        white-space: nowrap;
+    }
+
+    .client-subtable {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+        .client-subtable td {
+            vertical-align: top;
+        }
+
+    .bills-table td {
+        vertical-align: top;
+    }
+
+    .bills-table th {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        vertical-align: bottom;
+    }
+
+    .bills-table .btn {
+        white-space: nowrap;
+    }
+
+    .client-group-details > td {
+        padding: 0 !important;
+    }
+
+    @@page {
+        size: A4 landscape;
+        margin: 10mm;
+    }
+
     @@media print {
         .topbar, .sidebar, .no-print {
             display: none !important;
         }
 
-        .app-body, .form-card {
+        body {
+            background: #fff !important;
+            font-size: 11px;
+        }
+
+        .app-body, .content {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .form-card, .app-body {
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
+        }
+
+        .list-card {
+            box-shadow: none !important;
+            border: 1px solid #ccc !important;
+        }
+        /* نفس تقسيم الشاشة حتى لو عرض الصفحة صغير */
+        .row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+        }
+
+            .row > .col-md-3 {
+                flex: 0 0 auto !important;
+                width: 25% !important;
+            }
+
+            .row > .col-md-6 {
+                flex: 0 0 auto !important;
+                width: 50% !important;
+            }
+
+        .table td, .table th {
+            padding: 4px 6px !important;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tr, .list-card {
+            break-inside: avoid;
         }
         /* لما تطبع، افتح كل مجموعات العملاء أوتوماتيك حتى لو كانت مقفولة على الشاشة */
         .collapse {
             display: block !important;
             height: auto !important;
+        }
+
+        .client-group-details > td {
+            padding: 0 !important;
+        }
+
+        .group-arrow {
+            display: none;
         }
     }
 </style>
@@ -169,13 +281,14 @@
 
         <!-- ===== Bills Table ===== -->
         <div class="list-card mt-3">
-            <table class="table table-bordered mb-0">
+            <table class="table table-bordered mb-0 bills-table">
+                @Html.Raw(Cols)
                 <thead>
                     <tr>
                         <th>Bill #</th>
                         <th>Date</th>
                         <th>Client</th>
-                        <th class="text-end">Items</th>
+                        <th>Items</th>
                         <th class="text-end">Total (Before Discount)</th>
                         <th class="text-end">Discounts</th>
                         <th class="text-end">The Net</th>
@@ -205,77 +318,84 @@
                                 <td>@bill.Id</td>
                                 <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
                                 <td>@bill.ClientName</td>
-                                <td class="text-end">@bill.ItemsCount</td>
-                                <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
-                                <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
-                                <td class="text-end">@bill.TheNet.ToString("0.00")</td>
-                                <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
-                                <td class="text-end">@bill.TheRest.ToString("0.00")</td>
-                                <td class="no-print">
-                                    <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            var groupId = "report-grp-" + group[0].Id;
-                            <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
-                                role="button" aria-expanded="false" aria-controls="@groupId">
-                                <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices</td>
-                                <td>@group[0].ClientName</td>
-                                <td class="text-end">@group.Sum(b => b.ItemsCount)</td>
-                                <td class="text-end">@group.Sum(b => b.GrossTotal).ToString("0.00")</td>
-                                <td class="text-end">@group.Sum(b => b.TotalDiscount).ToString("0.00")</td>
-                                <td class="text-end">@group.Sum(b => b.TheNet).ToString("0.00")</td>
-                                <td class="text-end">@group.Sum(b => b.PaidUp).ToString("0.00")</td>
-                                <td class="text-end">@group.Sum(b => b.TheRest).ToString("0.00")</td>
-                                <td class="no-print"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
-                            </tr>
-                            <tr class="client-group-details">
-                                <td colspan="10">
-                                    <div class="collapse" id="@groupId">
-                                        <table class="table table-sm mb-0 client-subtable">
-                                            <tbody>
-                                                @foreach (var bill in group)
-                                                {
-                                                    <tr>
-                                                        <td>@bill.Id</td>
-                                                        <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                                                        <td>@bill.ClientName</td>
-                                                        <td class="text-end">@bill.ItemsCount</td>
-                                                        <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
-                                                        <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
-                                                        <td class="text-end">@bill.TheNet.ToString("0.00")</td>
-                                                        <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
-                                                        <td class="text-end">@bill.TheRest.ToString("0.00")</td>
-                                                        <td class="no-print">
-                                                            <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-                @if (report.Bills.Any())
-                {
-                    <tfoot>
-                        <tr class="fw-bold">
-                            <td colspan="4" class="text-end">Totals:</td>
-                            <td class="text-end">@report.TotalBillsAmount.ToString("0.00")</td>
-                            <td class="text-end">@report.TotalDiscounts.ToString("0.00")</td>
-                            <td class="text-end">@report.TotalNetSales.ToString("0.00")</td>
-                            <td class="text-end">@report.TotalCollected.ToString("0.00")</td>
-                            <td class="text-end">@report.TotalOutstanding.ToString("0.00")</td>
-                            <td class="no-print"></td>
+                                <td>@{
+                                    Lines(bill);
+                                }
+                            </td>
+                            <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
+                            <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
+                            <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                            <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
+                            <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                            <td class="no-print">
+                                <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
                         </tr>
-                    </tfoot>
+                    }
+                        else
+                    {
+                        var groupId = "report-grp-" + group[0].Id;
+                        <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                            role="button" aria-expanded="false" aria-controls="@groupId">
+                            <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices</td>
+                            <td>@group[0].ClientName</td>
+                            <td class="text-muted">@group.Sum(b => b.ItemsCount) items</td>
+                            <td class="text-end">@group.Sum(b => b.GrossTotal).ToString("0.00")</td>
+                            <td class="text-end">@group.Sum(b => b.TotalDiscount).ToString("0.00")</td>
+                            <td class="text-end">@group.Sum(b => b.TheNet).ToString("0.00")</td>
+                            <td class="text-end">@group.Sum(b => b.PaidUp).ToString("0.00")</td>
+                            <td class="text-end">@group.Sum(b => b.TheRest).ToString("0.00")</td>
+                            <td class="no-print"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
+                        </tr>
+                        <tr class="client-group-details">
+                            <td colspan="10">
+                                <div class="collapse" id="@groupId">
+                                    <table class="table table-sm mb-0 client-subtable">
+                                        @Html.Raw(Cols)
+                                        <tbody>
+                                            @foreach (var bill in group)
+                                            {
+                                                <tr>
+                                                    <td>@bill.Id</td>
+                                                    <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                                    <td>@bill.ClientName</td>
+                                                    <td>@{
+                                                        Lines(bill);
+                                                    }
+                                                </td>
+                                                <td class="text-end">@bill.GrossTotal.ToString("0.00")</td>
+                                                <td class="text-end">@bill.TotalDiscount.ToString("0.00")</td>
+                                                <td class="text-end">@bill.TheNet.ToString("0.00")</td>
+                                                <td class="text-end">@bill.PaidUp.ToString("0.00")</td>
+                                                <td class="text-end">@bill.TheRest.ToString("0.00")</td>
+                                                <td class="no-print">
+                                                    <a asp-controller="Bills" asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
                 }
-            </table>
-        </div>
-    </div>
+            }
+        </tbody>
+        @if (report.Bills.Any())
+        {
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="4" class="text-end">Totals:</td>
+                    <td class="text-end">@report.TotalBillsAmount.ToString("0.00")</td>
+                    <td class="text-end">@report.TotalDiscounts.ToString("0.00")</td>
+                    <td class="text-end">@report.TotalNetSales.ToString("0.00")</td>
+                    <td class="text-end">@report.TotalCollected.ToString("0.00")</td>
+                    <td class="text-end">@report.TotalOutstanding.ToString("0.00")</td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        }
+    </table>
+</div>
+</div>
 }

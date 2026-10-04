@@ -4,12 +4,20 @@ using System.Text;
 
 namespace BillsSystem.Application.DTOs
 {
+    public class BillLineDto
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public string UnitName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+    }
+
     public class BillSummaryDto
     {
         public int Id { get; set; }
         public DateTime BillDate { get; set; }
         public string ClientName { get; set; } = null!;
         public int ItemsCount { get; set; }
+        public List<BillLineDto> Lines { get; set; } = new();   // أسماء الأصناف في الفاتورة
         public decimal GrossTotal { get; set; }         // قبل أي خصم (أصناف + فاتورة)
         public decimal TotalDiscount { get; set; }      // خصم الأصناف + خصم الفاتورة
         public decimal TheNet { get; set; }

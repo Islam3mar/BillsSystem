@@ -66,6 +66,12 @@ namespace BillsSystem.Application.Services
                     BillDate = b.BillDate,
                     ClientName = b.ClientName,
                     ItemsCount = b.ItemsCount,
+                    Lines = b.Lines.Select(l => new BillLineDto
+                    {
+                        ItemName = l.ItemName,
+                        UnitName = l.UnitName,
+                        Quantity = l.Quantity
+                    }).ToList(),
                     GrossTotal = b.GrossTotal,
                     TotalDiscount = b.TotalDiscount,
                     TheNet = b.TheNet,
