@@ -12,7 +12,7 @@ namespace BillsSystem.Application.DTOs
 
         public string Host { get; set; } = string.Empty;
         public int Port { get; set; } = 587;
-        public bool EnableSsl { get; set; } = true;     // STARTTLS (587 / 2525). الـ SSL الصريح على 465 مش مدعوم هنا
+    
 
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
@@ -21,5 +21,8 @@ namespace BillsSystem.Application.DTOs
         public string FromName { get; set; } = "Billing";
 
         public int TimeoutSeconds { get; set; } = 15;
+
+        // Auto = حسب البورت (587/2525 → StartTls، 465 → SslOnConnect). أو حدده: None / StartTls / StartTlsWhenAvailable / SslOnConnect
+        public string Security { get; set; } = "Auto";
     }
 }

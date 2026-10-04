@@ -76,6 +76,8 @@ namespace BillsSystem.Application.Services
                 return result;
             }
 
+            var oldLimit = client.MaxCreditLimit;
+
             client.Name = input.Name.Trim();
             client.Phone = input.Phone.Trim();
             client.Address = input.Address.Trim();
@@ -92,6 +94,16 @@ namespace BillsSystem.Application.Services
 
             result.Success = true;
             await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Updated, $"Client updated: {client.Name}", client.Id);
+
+            // السقف اتغيّر وبقى أقل من الدين الحالي: تنبيه للأدمن (التعديل نفسه مسموح)
+            if (client.MaxCreditLimit is decimal newLimit && newLimit != oldLimit)
+            {
+                var debt = await _unitOfWork.Bills.GetClientOutstandingAsync(client.Id);
+                if (debt > newLimit)
+                    await _notifications.NotifyAsync(NotificationType.Client, NotificationAction.Alert,
+                        $"'{client.Name}' credit limit was set to {newLimit:0.00}, below the current debt ({debt:0.00}). New credit invoices will be rejected until the debt is settled", client.Id);
+            }
+
             result.Client = client;
             return result;
         }

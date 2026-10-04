@@ -30,6 +30,9 @@ namespace BillsSystem.Domain.Entities
         public DateTime? LastReminderSentAt { get; set; }
         public ReminderType LastReminderType { get; set; }
 
+        // آخر محاولة إرسال تذكير فشلت (عشان الفاتورة الفاشلة متحجبش اللي وراها). بتتصفّر لما التذكير يتبعت
+        public DateTime? LastReminderAttemptAt { get; set; }
+
         // Soft delete: الفاتورة بتفضل في الداتابيز بس بتختفي من كل الشاشات والتقارير
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
@@ -42,5 +45,8 @@ namespace BillsSystem.Domain.Entities
 
         public ICollection<BillItem> Items { get; set; } = new List<BillItem>();
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+
+      
     }
 }

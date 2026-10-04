@@ -39,6 +39,7 @@ namespace BillsSystem.Application.Services
             if (!_settings.Enabled) return result;
 
             var today = AppClock.Today;
+            var retryAfter = TimeSpan.FromMinutes(Math.Max(1, _settings.RetryFailedAfterMinutes));
             var candidates = await _unitOfWork.Bills.GetReminderCandidatesAsync(today, _settings.DaysBeforeDue);
             var consecutiveFailures = 0;
 
@@ -54,6 +55,13 @@ namespace BillsSystem.Application.Services
 
                 if (hasEmail)
                 {
+                    // فشلت من وقت قريب: نسيبها كام ساعة وناخد اللي بعدها (من غير ما تحجب الدورة)
+                    if (bill.LastReminderAttemptAt is DateTime lastAttempt && AppClock.Now - lastAttempt < retryAfter)
+                    {
+                        result.Skipped++;
+                        continue;
+                    }
+
                     // الإيميل لسه مش متفعّل، أو وصلنا للحد: الفاتورة بتستنى ومش بتتعلّم "اتبعتلها"
                     if (!_clientEmails.IsEnabled ||
                         result.EmailsSent >= _settings.MaxEmailsPerRun ||
@@ -67,7 +75,9 @@ namespace BillsSystem.Application.Services
                     {
                         result.Failed++;
                         consecutiveFailures++;
-                        continue;   // مش بنعلّمها، فهتتحاول تاني في الدورة الجاية
+                        // مش بنعلّمها "اتبعتلها"، بس بنسجل وقت المحاولة عشان تتأخر ويتقدم عليها غيرها
+                        await _unitOfWork.Bills.MarkReminderAttemptAsync(bill.BillId, AppClock.Now);
+                        continue;
                     }
 
                     consecutiveFailures = 0;

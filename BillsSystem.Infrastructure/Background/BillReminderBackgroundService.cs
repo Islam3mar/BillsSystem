@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using BillsSystem.Domain.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,8 @@ namespace BillsSystem.Infrastructure.Background
         private readonly ReminderSettings _settings;
         private readonly ILogger<BillReminderBackgroundService> _logger;
 
+        private DateTime _lastPurgeDate = DateTime.MinValue;   // تنظيف الإشعارات مرة في اليوم بس
+
         public BillReminderBackgroundService(IServiceScopeFactory scopeFactory,
             IOptions<ReminderSettings> settings, ILogger<BillReminderBackgroundService> logger)
         {
@@ -29,10 +32,7 @@ namespace BillsSystem.Infrastructure.Background
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             if (!_settings.Enabled)
-            {
-                _logger.LogInformation("Bill reminders are disabled (Reminders:Enabled = false)");
-                return;
-            }
+                _logger.LogInformation("Bill reminders are disabled (Reminders:Enabled = false); only notification cleanup will run");
 
             try
             {
@@ -41,7 +41,8 @@ namespace BillsSystem.Infrastructure.Background
                 using var timer = new PeriodicTimer(TimeSpan.FromMinutes(Math.Max(1, _settings.CheckIntervalMinutes)));
                 do
                 {
-                    await RunOnceAsync(stoppingToken);
+                    if (_settings.Enabled) await RunOnceAsync(stoppingToken);
+                    await PurgeNotificationsAsync(stoppingToken);
                 }
                 while (await timer.WaitForNextTickAsync(stoppingToken));
             }
@@ -72,6 +73,32 @@ namespace BillsSystem.Infrastructure.Background
             {
                 // أي خطأ (الداتابيز مش متاحة مثلًا) متسجل ومبيوقفش الخدمة، والدورة الجاية بتحاول تاني
                 _logger.LogError(ex, "Reminder run failed");
+            }
+        }
+
+        // مرة في اليوم: مسح الإشعارات القديمة. فشله مبيأثرش على التذكيرات
+        private async Task PurgeNotificationsAsync(CancellationToken ct)
+        {
+            if (_lastPurgeDate == AppClock.Today) return;
+
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var notifications = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+                var removed = await notifications.PurgeOldAsync(_settings.NotificationRetentionDays);
+                _lastPurgeDate = AppClock.Today;
+
+                if (removed > 0)
+                    _logger.LogInformation("Purged {Count} notifications older than {Days} days", removed, _settings.NotificationRetentionDays);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Notification cleanup failed");
             }
         }
     }

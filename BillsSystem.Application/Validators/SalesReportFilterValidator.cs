@@ -16,8 +16,10 @@ namespace BillsSystem.Application.Validators
                 .NotEqual(default(DateTime)).WithMessage("Start Period is Required");
 
             RuleFor(x => x.ToDate)
-                .NotEqual(default(DateTime)).WithMessage("End Period is Required")
-                .GreaterThanOrEqualTo(x => x.FromDate).WithMessage("End Period must be after or equal Start Period");
+          .NotEqual(default(DateTime)).WithMessage("End Period is Required")
+          .GreaterThanOrEqualTo(x => x.FromDate).WithMessage("End Period must be after or equal Start Period")
+          .Must((filter, to) => (to.Date - filter.FromDate.Date).TotalDays <= 366)
+              .WithMessage("Report period can't exceed 366 days");
         }
     }
 }

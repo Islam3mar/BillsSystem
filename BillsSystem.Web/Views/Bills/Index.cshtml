@@ -70,7 +70,7 @@
                         <td class="text-center">
                             <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
                             <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Delete this invoice? It will be hidden from reports and its stock will be returned.');">
+                                onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                             </form>
@@ -82,7 +82,7 @@
                     var groupId = "bills-grp-" + group[0].Id;
                     <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
                         role="button" aria-expanded="false" aria-controls="@groupId">
-                        <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices</td>
+                        <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices <small class="text-muted">(on this page)</small></td>
                         <td>@group[0].Client.Name</td>
                         <td>@group.Sum(b => b.BillsTotal).ToString("0.00")</td>
                         <td>@group.Sum(b => b.TheNet).ToString("0.00")</td>
@@ -108,7 +108,7 @@
                                                 <td class="text-center">
                                                     <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
                                                     <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                                                          onsubmit="return confirm('Delete this invoice? It will be hidden from reports and its stock will be returned.');">
+                                                          onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                                     </form>

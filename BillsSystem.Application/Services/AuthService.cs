@@ -19,10 +19,11 @@ namespace BillsSystem.Application.Services
 
             var (storedUsername, storedHash) = credentials.Value;
 
-            if (!string.Equals(username?.Trim(), storedUsername, StringComparison.OrdinalIgnoreCase))
-                return false;
+            // بنفحص الباسورد دايمًا (حتى لو اسم المستخدم غلط) عشان زمن الرد ميبيّنش هل اسم المستخدم صح
+            var usernameMatches = string.Equals(username?.Trim(), storedUsername, StringComparison.OrdinalIgnoreCase);
+            var passwordMatches = PasswordHasher.Verify(password ?? string.Empty, storedHash);
 
-            return PasswordHasher.Verify(password, storedHash);
+            return usernameMatches && passwordMatches;
         }
     }
 }

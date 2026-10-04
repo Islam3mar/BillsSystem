@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using BillsSystem.Application.Common;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
 using Microsoft.Extensions.Options;
@@ -23,6 +24,9 @@ namespace BillsSystem.Infrastructure.Payments
         public async Task<(string SessionId, string Url)> CreateCheckoutSessionAsync(
             int billId, decimal amount, string successUrl, string cancelUrl)
         {
+            if (string.IsNullOrWhiteSpace(StripeConfiguration.ApiKey))
+                throw new InvalidOperationException("Stripe:SecretKey is not configured");
+
             var options = new SessionCreateOptions
             {
                 Mode = "payment",
@@ -34,7 +38,7 @@ namespace BillsSystem.Infrastructure.Payments
                         PriceData = new SessionLineItemPriceDataOptions
                         {
                             Currency = _currency,
-                            UnitAmount = (long)Math.Round(amount * 100m, 0), // Stripe بياخد المبلغ بالـ Cents
+                            UnitAmount = StripeMoney.ToMinorUnits(amount, _currency), // Stripe بياخد المبلغ بالـ Cents
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
                                 Name = $"Bills System — Invoice #{billId}"

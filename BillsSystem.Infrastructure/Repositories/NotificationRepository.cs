@@ -35,6 +35,11 @@ namespace BillsSystem.Infrastructure.Repositories
             await Query.Where(n => !n.IsRead)
                        .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true).SetProperty(n => n.ReadAt, now));
 
+
+        // DELETE واحد في الداتابيز من غير ما نحمّل الصفوف
+        public async Task<int> DeleteOlderThanAsync(DateTime cutoff) =>
+            await Query.Where(n => n.CreatedAt < cutoff).ExecuteDeleteAsync();
+
         private IQueryable<Notification> Filter(bool unreadOnly) =>
             unreadOnly ? Query.Where(n => !n.IsRead) : Query;
     }
