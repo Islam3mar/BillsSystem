@@ -8,7 +8,7 @@ namespace BillsSystem.Domain.Specifications
     // صفحة من الفواتير + بحث برقم الفاتورة أو اسم العميل
     public class BillsPagedSpecification : BaseSpecification<Bill>
     {
-        public BillsPagedSpecification(string? search, int page, int pageSize)
+        public BillsPagedSpecification(string? search, int page, int pageSize, bool includeItems = false)
         {
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -20,6 +20,7 @@ namespace BillsSystem.Domain.Specifications
             }
 
             AddInclude("Client");
+            if (includeItems) AddInclude("Items");   // أسماء الأصناف في قائمة الفواتير
             ApplyOrderByDescending(b => b.BillDate);
             ApplyThenByDescending(b => b.Id);
             ApplyPaging((Math.Max(page, 1) - 1) * pageSize, pageSize);

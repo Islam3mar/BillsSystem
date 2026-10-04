@@ -16,12 +16,20 @@ namespace BillsSystem.Domain.Reports
         public decimal Outstanding { get; set; }
     }
 
+    public class BillLineRow
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public string UnitName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+    }
+
     public class BillSummaryRow
     {
         public int Id { get; set; }
         public DateTime BillDate { get; set; }
         public string ClientName { get; set; } = string.Empty;
         public int ItemsCount { get; set; }
+        public List<BillLineRow> Lines { get; set; } = new();
         public decimal GrossTotal { get; set; }
         public decimal TotalDiscount { get; set; }
         public decimal TheNet { get; set; }

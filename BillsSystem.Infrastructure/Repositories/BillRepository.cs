@@ -147,6 +147,14 @@ namespace BillsSystem.Infrastructure.Repositories
                     BillDate = b.BillDate,
                     ClientName = b.Client.Name,
                     ItemsCount = b.Items.Count(),
+                    Lines = b.Items
+                        .OrderBy(i => i.Id)
+                        .Select(i => new BillLineRow
+                        {
+                            ItemName = i.ItemName,
+                            UnitName = i.UnitName,
+                            Quantity = i.Quantity
+                        }).ToList(),
                     GrossTotal = b.Items.Sum(i => i.Total),
                     TotalDiscount = b.Items.Sum(i => i.DiscountAmount) + b.ValueDiscount,
                     TheNet = b.TheNet,

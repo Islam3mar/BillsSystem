@@ -42,8 +42,8 @@ namespace BillsSystem.Application.Services
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
         {
-            page = Math.Clamp(page, 1, 100_000);
-            var spec = new BillsPagedSpecification(search, page, pageSize);
+            page = Math.Max(page, 1);
+            var spec = new BillsPagedSpecification(search, page, pageSize, includeItems: true);
 
             var total = await _unitOfWork.Bills.CountAsync(spec);
             var items = (await _unitOfWork.Bills.ListAsync(spec)).ToList();
@@ -74,7 +74,6 @@ namespace BillsSystem.Application.Services
             var validation = await _validator.ValidateAsync(input);
             if (!validation.IsValid)
             {
-
                 MapValidationErrors(validation, result);
                 return result;
             }
@@ -317,8 +316,8 @@ namespace BillsSystem.Application.Services
             if (notes != null && notes.Length > 200) return (false, "Notes must not exceed 200 characters");
 
             bill.Payments.Add(new Payment { Amount = amount, PaymentDate = date, Notes = notes });
-            RecalculateTotals(bill);
-        
+            bill.PaidUp += amount;
+            bill.TheRest -= amount;
 
             try
             {
@@ -352,16 +351,13 @@ namespace BillsSystem.Application.Services
             if (reason == null) return (false, "Void reason is required");
             if (reason.Length > 200) return (false, "Reason must not exceed 200 characters");
 
+            // إلغاء الدفعة بيزوّد دين العميل، فممنوع لو الدين بعدها هيعدّي السقف
             if (bill.Client.MaxCreditLimit is decimal creditLimit)
             {
                 var currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(bill.ClientId);
+                var debtAfterVoid = currentDebt + payment.Amount;
 
-                // الدين بيزيد بقد الفرق الفعلي في TheRest، مش بمبلغ الدفعة (لو الدفعة كانت زيادة عن المتبقي)
-                var restAfterVoid = Math.Max(0, bill.TheNet - (bill.PaidUp - payment.Amount));
-                var debtIncrease = restAfterVoid - bill.TheRest;
-                var debtAfterVoid = currentDebt + debtIncrease;
-
-                if (debtIncrease > 0 && debtAfterVoid > creditLimit)
+                if (debtAfterVoid > creditLimit)
                 {
                     var available = Math.Max(0, creditLimit - currentDebt);
                     return (false,
@@ -373,7 +369,9 @@ namespace BillsSystem.Application.Services
             payment.IsVoided = true;
             payment.VoidedAt = AppClock.Now;
             payment.VoidReason = reason;
-            RecalculateTotals(bill);
+
+            bill.PaidUp -= payment.Amount;
+            bill.TheRest += payment.Amount;
 
             try
             {
@@ -408,7 +406,6 @@ namespace BillsSystem.Application.Services
             bill.DueDate = dueDate.Date;
             bill.LastReminderType = ReminderType.None;
             bill.LastReminderSentAt = null;
-              bill.LastReminderAttemptAt = null;
 
             try
             {
@@ -509,7 +506,8 @@ namespace BillsSystem.Application.Services
                 StripePaymentIntentId = stripePaymentIntentId
             });
 
-            RecalculateTotals(bill);
+            bill.PaidUp += amount;
+            bill.TheRest = Math.Max(0, bill.TheRest - amount);
 
             try
             {
@@ -563,8 +561,8 @@ namespace BillsSystem.Application.Services
             payment.IsVoided = true;
             payment.VoidedAt = AppClock.Now;
             payment.VoidReason = "Refunded in Stripe";
-
-            RecalculateTotals(bill);
+            bill.PaidUp -= payment.Amount;
+            bill.TheRest += payment.Amount;
 
             try
             {
@@ -645,14 +643,6 @@ namespace BillsSystem.Application.Services
             {
                 _logger.LogWarning(ex, "Couldn't run the credit-limit check for client {ClientId}", client.Id);
             }
-        }
-
-
-        // مصدر الحقيقة: مجموع الدفعات اللي مش ملغية
-        private static void RecalculateTotals(Bill bill)
-        {
-            bill.PaidUp = bill.Payments.Where(p => !p.IsVoided).Sum(p => p.Amount);
-            bill.TheRest = Math.Max(0, bill.TheNet - bill.PaidUp);
         }
 
         private static void MapValidationErrors(FluentValidation.Results.ValidationResult validation, BillResult result)
