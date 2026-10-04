@@ -22,6 +22,14 @@ namespace BillsSystem.Application.DTOs
         // حماية: أقصى عدد إيميلات في الدورة الواحدة
         public int MaxEmailsPerRun { get; set; } = 50;
 
+
+        // فاتورة فشل إرسال تذكيرها: نستنى كام دقيقة قبل ما نعيد المحاولة (عشان متحجبش الباقي)
+        public int RetryFailedAfterMinutes { get; set; } = 180;
+
+        // الإشعارات الأقدم من كده بتتمسح تلقائيًا (البند 5)
+        public int NotificationRetentionDays { get; set; } = 90;
+
+
         // إيميل سقف الدين: يتبعت لما الدين بعد الفاتورة يوصل للنسبة دي من الحد (أو لما فاتورة تترفض)
         public int CreditWarningPercent { get; set; } = 90;
         public int CreditEmailCooldownHours { get; set; } = 24;

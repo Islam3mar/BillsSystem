@@ -54,7 +54,7 @@ namespace BillsSystem.Application.Services
 
         public async Task<PagedResult<Notification>> GetPagedAsync(int page, int pageSize, bool unreadOnly)
         {
-            page = Math.Max(page, 1);
+            page = Math.Clamp(page, 1, 100_000);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
             var total = await _unitOfWork.Notifications.CountAsync(unreadOnly);
@@ -68,5 +68,10 @@ namespace BillsSystem.Application.Services
 
         public async Task MarkAllAsReadAsync()
             => await _unitOfWork.Notifications.MarkAllAsReadAsync(AppClock.Now);
+
+
+
+        public async Task<int> PurgeOldAsync(int olderThanDays)
+            => await _unitOfWork.Notifications.DeleteOlderThanAsync(AppClock.Now.AddDays(-Math.Max(7, olderThanDays)));
     }
 }

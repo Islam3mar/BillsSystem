@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Mail;
+using System.Net.Sockets;
 using System.Text;
 using BillsSystem.Application.DTOs;
 using BillsSystem.Application.Interfaces;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace BillsSystem.Infrastructure.Email
 {
-    // الإرسال الفعلي. بيشتغل مع أي SMTP (Mailtrap / Gmail / SendGrid ...) والتغيير من appsettings بس
+    // الإرسال الفعلي بـ MailKit. بيشتغل مع أي SMTP (Mailtrap / Gmail / SendGrid ...) والتغيير من appsettings بس
     public class SmtpEmailService : IEmailService
     {
         private readonly EmailSettings _settings;
@@ -38,32 +41,25 @@ namespace BillsSystem.Infrastructure.Email
 
             try
             {
-                using var message = new MailMessage
-                {
-                    From = new MailAddress(_settings.FromEmail, _settings.FromName, Encoding.UTF8),
-                    Subject = subject,
-                    SubjectEncoding = Encoding.UTF8,
-                    Body = htmlBody,
-                    BodyEncoding = Encoding.UTF8,
-                    IsBodyHtml = true
-                };
-                message.To.Add(new MailAddress(toEmail, toName, Encoding.UTF8));
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
+                message.To.Add(new MailboxAddress(toName, toEmail));
+                message.Subject = subject;
+                message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
-                using var client = new SmtpClient(_settings.Host, _settings.Port)
-                {
-                    EnableSsl = _settings.EnableSsl,
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    UseDefaultCredentials = false
-                };
+                var timeoutSeconds = Math.Max(5, _settings.TimeoutSeconds);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeout.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
+                using var client = new SmtpClient { Timeout = timeoutSeconds * 1000 };
+
+                await client.ConnectAsync(_settings.Host, _settings.Port, ParseSecurity(_settings.Security), timeout.Token);
 
                 if (!string.IsNullOrWhiteSpace(_settings.UserName))
-                    client.Credentials = new NetworkCredential(_settings.UserName, _settings.Password);
+                    await client.AuthenticateAsync(_settings.UserName, _settings.Password, timeout.Token);
 
-                // SmtpClient.Timeout مش بيأثر على SendMailAsync، فبنستخدم Token بمهلة
-                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                timeout.CancelAfter(TimeSpan.FromSeconds(Math.Max(5, _settings.TimeoutSeconds)));
-
-                await client.SendMailAsync(message, timeout.Token);
+                await client.SendAsync(message, timeout.Token);
+                await client.DisconnectAsync(true, CancellationToken.None);
 
                 _logger.LogInformation("Email '{Subject}' sent to {To}", subject, toEmail);
                 return true;
@@ -72,11 +68,46 @@ namespace BillsSystem.Infrastructure.Email
             {
                 throw;   // التطبيق بيقفل
             }
+            catch (OperationCanceledException)
+            {
+                _logger.LogError("SMTP timed out after {Seconds}s sending '{Subject}' to {To} via {Host}:{Port}. Check the host/port and the Email:Security setting",
+                    _settings.TimeoutSeconds, subject, toEmail, _settings.Host, _settings.Port);
+                return false;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.LogError(ex, "SMTP connection timed out sending '{Subject}' to {To} via {Host}:{Port}", subject, toEmail, _settings.Host, _settings.Port);
+                return false;
+            }
+            catch (MailKit.Security.AuthenticationException ex)
+            {
+                _logger.LogError(ex, "SMTP login was rejected for {User}. Check Email:UserName / Email:Password (Gmail needs an App Password, not the account password)", _settings.UserName);
+                return false;
+            }
+            catch (SslHandshakeException ex)
+            {
+                _logger.LogError(ex, "TLS handshake failed with {Host}:{Port}. Port and Email:Security probably don't match (587 = StartTls, 465 = SslOnConnect)", _settings.Host, _settings.Port);
+                return false;
+            }
+            catch (SmtpCommandException ex)
+            {
+                // السيرفر رد برفض واضح: غالبًا إيميل المستلم أو المرسل غلط/مرفوض
+                _logger.LogError(ex, "SMTP server rejected '{Subject}' to {To}: {ErrorCode} / {StatusCode}", subject, toEmail, ex.ErrorCode, ex.StatusCode);
+                return false;
+            }
+            catch (SocketException ex)
+            {
+                _logger.LogError(ex, "Couldn't reach {Host}:{Port} ({SocketError}). Check the network/firewall", _settings.Host, _settings.Port, ex.SocketErrorCode);
+                return false;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send email '{Subject}' to {To}", subject, toEmail);
                 return false;
             }
         }
+
+        private static SecureSocketOptions ParseSecurity(string? value)
+            => Enum.TryParse<SecureSocketOptions>(value, ignoreCase: true, out var option) ? option : SecureSocketOptions.Auto;
     }
 }

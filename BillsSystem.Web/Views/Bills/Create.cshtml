@@ -248,6 +248,19 @@
             return sum;
         }
 
+        // بتعيد ترقيم الصفوف 0..n-1 عشان الـ Model Binder ميقفش عند أول فجوة
+function reindexRows() {
+    const rows = document.querySelectorAll('#itemsTableBody tr[data-row]');
+    rows.forEach((row, i) => {
+        row.querySelectorAll('[name^="Items["]').forEach(el => {
+            el.name = el.name.replace(/^Items\[\d+\]/, 'Items[' + i + ']');
+        });
+    });
+    rowIndex = rows.length;
+}
+
+
+
         // ---------- لما يختار صنف: نجيب سعره ووحدته ----------
         itemSelect.addEventListener('change', function () {
             itemError.textContent = '';
@@ -344,11 +357,12 @@
         });
 
         // ---------- حذف صف ----------
-        itemsTableBody.addEventListener('click', function (e) {
-            if (!e.target.classList.contains('remove-row-btn')) return;
-            e.target.closest('tr').remove();
-            recalculateAll();
-        });
+     itemsTableBody.addEventListener('click', function (e) {
+    if (!e.target.classList.contains('remove-row-btn')) return;
+    e.target.closest('tr').remove();
+    reindexRows();          // <-- جديد
+    recalculateAll();
+});
 
         function recalculateAll() {
             let billsTotal = 0;
@@ -460,6 +474,7 @@
                 itemError.textContent = 'Fix the highlighted discounts first (a discount can\'t exceed the item total)';
                 return;
             }
+            reindexRows();  
             saveBtn.disabled = true;
         });
         window.addEventListener('pageshow', function (e) { if (e.persisted) saveBtn.disabled = false; });

@@ -42,7 +42,7 @@ namespace BillsSystem.Application.Services
 
         public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
         {
-            page = Math.Max(page, 1);
+            page = Math.Clamp(page, 1, 100_000);
             var spec = new BillsPagedSpecification(search, page, pageSize);
 
             var total = await _unitOfWork.Bills.CountAsync(spec);
@@ -74,6 +74,7 @@ namespace BillsSystem.Application.Services
             var validation = await _validator.ValidateAsync(input);
             if (!validation.IsValid)
             {
+
                 MapValidationErrors(validation, result);
                 return result;
             }
@@ -306,11 +307,7 @@ namespace BillsSystem.Application.Services
             amount = Money.Round(amount);
             if (amount <= 0) return (false, "Payment amount Must be Greater than Zero");
             if (amount > bill.TheRest)
-            {
-                var msg = $"Payment can't exceed The Rest ({bill.TheRest:0.00})";
-                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, msg, bill.Id);
-                return (false, msg);
-            }
+                return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})");
 
             var date = (paymentDate ?? AppClock.Today).Date;
             if (date < bill.BillDate.Date || date > AppClock.Today)
@@ -320,8 +317,8 @@ namespace BillsSystem.Application.Services
             if (notes != null && notes.Length > 200) return (false, "Notes must not exceed 200 characters");
 
             bill.Payments.Add(new Payment { Amount = amount, PaymentDate = date, Notes = notes });
-            bill.PaidUp += amount;
-            bill.TheRest -= amount;
+            RecalculateTotals(bill);
+        
 
             try
             {
@@ -355,13 +352,16 @@ namespace BillsSystem.Application.Services
             if (reason == null) return (false, "Void reason is required");
             if (reason.Length > 200) return (false, "Reason must not exceed 200 characters");
 
-            // إلغاء الدفعة بيزوّد دين العميل، فممنوع لو الدين بعدها هيعدّي السقف
             if (bill.Client.MaxCreditLimit is decimal creditLimit)
             {
                 var currentDebt = await _unitOfWork.Bills.GetClientOutstandingAsync(bill.ClientId);
-                var debtAfterVoid = currentDebt + payment.Amount;
 
-                if (debtAfterVoid > creditLimit)
+                // الدين بيزيد بقد الفرق الفعلي في TheRest، مش بمبلغ الدفعة (لو الدفعة كانت زيادة عن المتبقي)
+                var restAfterVoid = Math.Max(0, bill.TheNet - (bill.PaidUp - payment.Amount));
+                var debtIncrease = restAfterVoid - bill.TheRest;
+                var debtAfterVoid = currentDebt + debtIncrease;
+
+                if (debtIncrease > 0 && debtAfterVoid > creditLimit)
                 {
                     var available = Math.Max(0, creditLimit - currentDebt);
                     return (false,
@@ -373,9 +373,7 @@ namespace BillsSystem.Application.Services
             payment.IsVoided = true;
             payment.VoidedAt = AppClock.Now;
             payment.VoidReason = reason;
-
-            bill.PaidUp -= payment.Amount;
-            bill.TheRest += payment.Amount;
+            RecalculateTotals(bill);
 
             try
             {
@@ -410,6 +408,7 @@ namespace BillsSystem.Application.Services
             bill.DueDate = dueDate.Date;
             bill.LastReminderType = ReminderType.None;
             bill.LastReminderSentAt = null;
+              bill.LastReminderAttemptAt = null;
 
             try
             {
@@ -438,13 +437,27 @@ namespace BillsSystem.Application.Services
             amount = Money.Round(amount);
             if (amount <= 0) return (false, "Payment amount Must be Greater than Zero", null);
             if (amount > bill.TheRest)
+                return (false, $"Payment can't exceed The Rest ({bill.TheRest:0.00})", null);
+
+            string sessionId;
+            string? url;
+            try
             {
-                var msg = $"Payment can't exceed The Rest ({bill.TheRest:0.00})";
-                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, msg, bill.Id);
-                return (false, msg, null);
+                (sessionId, url) = await _stripeCheckoutService.CreateCheckoutSessionAsync(billId, amount, successUrl, cancelUrl);
+            }
+            catch (Exception ex)
+            {
+                // مفتاح غلط / النت واقع / Stripe رفضت الطلب: مفيش فلوس اتسحبت، فنرجّع رسالة بدل صفحة 500
+                _logger.LogError(ex, "Couldn't create a Stripe checkout session for bill {BillId}, amount {Amount}", billId, amount);
+                return (false, "Couldn't start the Stripe payment. Please try again in a moment, or check the Stripe settings", null);
             }
 
-            var (sessionId, url) = await _stripeCheckoutService.CreateCheckoutSessionAsync(billId, amount, successUrl, cancelUrl);
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                _logger.LogError("Stripe returned no checkout URL for session {SessionId}, bill {BillId}", sessionId, billId);
+                return (false, "Couldn't start the Stripe payment. Please try again", null);
+            }
+
             _logger.LogInformation("Stripe checkout session {SessionId} created for bill {BillId}, amount {Amount}",
                 sessionId, billId, amount);
 
@@ -478,13 +491,12 @@ namespace BillsSystem.Application.Services
 
 
             // الفلوس اتقبضت فعليًا، فلازم تتسجل حتى لو في سباق نادر زادت عن TheRest الحالي
-            if (amount > bill.TheRest)
+            var restBefore = bill.TheRest;
+            var exceeds = amount > restBefore;
+            if (exceeds)
             {
                 _logger.LogWarning("Stripe payment {Amount} exceeds TheRest {TheRest} for bill {BillId} — recorded in full, needs review",
-                    amount, bill.TheRest, billId);
-                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
-                    $"Stripe payment {amount:0.00} exceeds TheRest {bill.TheRest:0.00} for bill #{billId} — recorded in full, needs review",
-                    billId);
+                    amount, restBefore, billId);
             }
 
             bill.Payments.Add(new Payment
@@ -497,12 +509,19 @@ namespace BillsSystem.Application.Services
                 StripePaymentIntentId = stripePaymentIntentId
             });
 
-            bill.PaidUp += amount;
-            bill.TheRest = Math.Max(0, bill.TheRest - amount);
+            RecalculateTotals(bill);
 
             try
             {
                 await _unitOfWork.SaveChangesAsync();
+
+                // الإشعارات بعد الحفظ الناجح بس
+                if (exceeds)
+                {
+                    await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                        $"Stripe payment {amount:0.00} exceeds TheRest {restBefore:0.00} for bill #{billId} — recorded in full, needs review",
+                        billId);
+                }
                 await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Created, $"Stripe payment of {amount:0.00} received for bill #{bill.Id} ({bill.Client.Name})", bill.Id);
                 return (true, null);
             }
@@ -512,10 +531,74 @@ namespace BillsSystem.Application.Services
                 if (await _unitOfWork.Bills.StripeSessionExistsAsync(stripeSessionId)) return (true, null);
 
                 _logger.LogError(ex, "Failed to save Stripe payment for bill {BillId}, session {SessionId}", billId, stripeSessionId);
-                return (false, "Database error");   // الـ Webhook هيرجّع 500 وStripe هتعيد المحاولة بـ Context جديد
+                return (false, "Database error");   // الـ Webhook هيرجّع 500 وStripe هتعيد المحاولة
             }
         }
 
+        public async Task<(bool Success, string? Error)> HandleStripeRefundAsync(string paymentIntentId, decimal totalRefunded)
+        {
+            totalRefunded = Money.Round(totalRefunded);
+
+            var bill = await _unitOfWork.Bills.GetByStripePaymentIntentAsync(paymentIntentId);
+            var payment = bill?.Payments.FirstOrDefault(p => p.StripePaymentIntentId == paymentIntentId);
+            if (bill == null || payment == null)
+            {
+                // إعادة المحاولة مش هتفيد (فاتورة محذوفة أو دفعة مش عندنا): نبلّغ الأدمن بس
+                _logger.LogWarning("Stripe refund {Amount} for unknown payment intent {PaymentIntentId}", totalRefunded, paymentIntentId);
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                    $"A Stripe refund of {totalRefunded:0.00} arrived for a payment that isn't in the system (intent {paymentIntentId}). Check it in the Stripe Dashboard");
+                return (true, null);
+            }
+
+            if (payment.IsVoided) return (true, null);   // اتلغت قبل كده (يدويًا أو بحدث سابق)
+
+            if (totalRefunded < payment.Amount)
+            {
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                    $"Partial Stripe refund ({totalRefunded:0.00} of {payment.Amount:0.00}) on bill #{bill.Id} ({bill.Client.Name}). Adjust it manually: void the payment and add the remaining amount", bill.Id);
+                return (true, null);
+            }
+
+            // استرداد كامل: الفلوس رجعت فعلًا، فمفيش فحص لسقف الدين هنا (عكس VoidPaymentAsync)
+            payment.IsVoided = true;
+            payment.VoidedAt = AppClock.Now;
+            payment.VoidReason = "Refunded in Stripe";
+
+            RecalculateTotals(bill);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+                await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert,
+                    $"Stripe payment of {payment.Amount:0.00} on bill #{bill.Id} ({bill.Client.Name}) was refunded and voided automatically", bill.Id);
+                await NotifyIfCreditLimitReachedAsync(bill.Client);
+                return (true, null);
+            }
+            catch (DbUpdateException ex)   // بيشمل DbUpdateConcurrencyException
+            {
+                _logger.LogError(ex, "Failed to apply Stripe refund for payment intent {PaymentIntentId}", paymentIntentId);
+                return (false, "Database error");   // Stripe هتعيد المحاولة
+            }
+        }
+
+        public async Task<(bool Success, string? Error)> HandleStripeDisputeAsync(string? paymentIntentId, decimal amount, string? reason)
+        {
+            var bill = string.IsNullOrEmpty(paymentIntentId)
+                ? null
+                : await _unitOfWork.Bills.GetByStripePaymentIntentAsync(paymentIntentId);
+
+            var message = bill == null
+                ? $"A Stripe dispute ({amount:0.00}) was opened (reason: {reason}). It doesn't match a payment in the system. Check the Stripe Dashboard"
+                : $"A Stripe dispute ({amount:0.00}) was opened on bill #{bill.Id} ({bill.Client.Name}), reason: {reason}. Answer it in the Stripe Dashboard before the deadline";
+
+            await _notifications.NotifyAsync(NotificationType.Payment, NotificationAction.Alert, message, bill?.Id);
+            return (true, null);
+        }
+        public async Task<bool> IsStripePaymentRecordedAsync(int billId, string stripeSessionId)
+        {
+            var bill = await _unitOfWork.Bills.GetByIdReadOnlyAsync(billId);
+            return bill != null && bill.Payments.Any(p => p.StripeSessionId == stripeSessionId && !p.IsVoided);
+        }
         //------------------------------------------------------------------------------------------
 
 
@@ -562,6 +645,14 @@ namespace BillsSystem.Application.Services
             {
                 _logger.LogWarning(ex, "Couldn't run the credit-limit check for client {ClientId}", client.Id);
             }
+        }
+
+
+        // مصدر الحقيقة: مجموع الدفعات اللي مش ملغية
+        private static void RecalculateTotals(Bill bill)
+        {
+            bill.PaidUp = bill.Payments.Where(p => !p.IsVoided).Sum(p => p.Amount);
+            bill.TheRest = Math.Max(0, bill.TheNet - bill.PaidUp);
         }
 
         private static void MapValidationErrors(FluentValidation.Results.ValidationResult validation, BillResult result)

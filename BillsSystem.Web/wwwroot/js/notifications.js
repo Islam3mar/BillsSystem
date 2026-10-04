@@ -27,9 +27,9 @@
     }
 
     function esc(s) {
-        var d = document.createElement('div');
-        d.textContent = s == null ? '' : s;
-        return d.innerHTML;
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
     }
 
     /* ---------- الجرس (Dropdown) ---------- */

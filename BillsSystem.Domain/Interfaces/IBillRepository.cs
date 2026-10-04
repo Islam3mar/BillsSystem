@@ -28,6 +28,11 @@ namespace BillsSystem.Domain.Interfaces
 
         Task<bool> StripeSessionExistsAsync(string stripeSessionId);
 
+
+        // الفاتورة (Tracked) اللي عليها دفعة بالـ PaymentIntent ده
+        Task<Bill?> GetByStripePaymentIntentAsync(string paymentIntentId);
+
+
         // ---------- التذكيرات ----------
         // فواتير ليها DueDate وعليها متبقي وميعادها <= النهارده + daysBefore (الفلترة النهائية في ReminderService)
         Task<List<ReminderCandidateRow>> GetReminderCandidatesAsync(DateTime today, int daysBefore);
@@ -35,5 +40,9 @@ namespace BillsSystem.Domain.Interfaces
 
         // UPDATE مباشر لعمودين بس، من غير RowVersion/Tracking عشان مايتعارضش مع أدمن بيسجل دفعة
         Task MarkReminderSentAsync(int billId, ReminderType type, DateTime now);
+
+
+        // محاولة فاشلة: بنسجل وقتها بس (مش بنعلّم إن التذكير اتبعت)
+        Task MarkReminderAttemptAsync(int billId, DateTime now);
     }
 }

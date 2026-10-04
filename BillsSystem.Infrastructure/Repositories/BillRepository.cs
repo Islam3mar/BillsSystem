@@ -55,18 +55,20 @@ namespace BillsSystem.Infrastructure.Repositories
             TheRest = b.TheRest,
             LastReminderSentAt = b.LastReminderSentAt,
             LastReminderType = b.LastReminderType,
+            LastReminderAttemptAt = b.LastReminderAttemptAt,
             ClientId = b.ClientId,
             ClientName = b.Client.Name,
             ClientEmail = b.Client.Email
         };
-
         public async Task<List<ReminderCandidateRow>> GetReminderCandidatesAsync(DateTime today, int daysBefore)
         {
             var horizon = today.Date.AddDays(Math.Max(0, daysBefore));
 
+            // اللي عمره ما اتحاول (أو اتحاول من زمان) الأول، عشان الفاتورة الفاشلة متحجبش اللي وراها
             return await Query.AsNoTracking()
                 .Where(b => b.DueDate != null && b.TheRest > 0 && b.DueDate <= horizon)
-                .OrderBy(b => b.DueDate).ThenBy(b => b.Id)
+                .OrderBy(b => b.LastReminderAttemptAt ?? DateTime.MinValue)
+                .ThenBy(b => b.DueDate).ThenBy(b => b.Id)
                 .Select(ToReminderRow)
                 .ToListAsync();
         }
@@ -78,10 +80,15 @@ namespace BillsSystem.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
 
         public async Task MarkReminderSentAsync(int billId, ReminderType type, DateTime now)
+     => await Query.Where(b => b.Id == billId)
+         .ExecuteUpdateAsync(s => s
+             .SetProperty(b => b.LastReminderSentAt, now)
+             .SetProperty(b => b.LastReminderType, type)
+             .SetProperty(b => b.LastReminderAttemptAt, (DateTime?)null));
+
+        public async Task MarkReminderAttemptAsync(int billId, DateTime now)
             => await Query.Where(b => b.Id == billId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(b => b.LastReminderSentAt, now)
-                    .SetProperty(b => b.LastReminderType, type));
+                .ExecuteUpdateAsync(s => s.SetProperty(b => b.LastReminderAttemptAt, now));
 
         // ---------------- Reports (كلها SQL) ----------------
         private static (DateTime Start, DateTime EndExclusive) Range(DateTime from, DateTime to)
@@ -91,7 +98,8 @@ namespace BillsSystem.Infrastructure.Repositories
         {
             var (start, end) = Range(from, to);
 
-            var billAgg = await Query.AsNoTracking()
+            // GroupBy(_ => 1) بيرجّع صف واحد بالكتير، فـ ToListAsync + FirstOrDefault بيشيل تحذير "من غير OrderBy"
+            var billAgg = (await Query.AsNoTracking()
                 .Where(b => b.BillDate >= start && b.BillDate < end)
                 .GroupBy(_ => 1)
                 .Select(g => new
@@ -102,9 +110,9 @@ namespace BillsSystem.Infrastructure.Repositories
                     Collected = g.Sum(b => b.PaidUp),
                     Outstanding = g.Sum(b => b.TheRest)
                 })
-                .FirstOrDefaultAsync();
+                .ToListAsync()).FirstOrDefault();
 
-            var lineAgg = await _context.BillItems.AsNoTracking()
+            var lineAgg = (await _context.BillItems.AsNoTracking()
                 .Where(i => i.Bill.BillDate >= start && i.Bill.BillDate < end)
                 .GroupBy(_ => 1)
                 .Select(g => new
@@ -112,7 +120,7 @@ namespace BillsSystem.Infrastructure.Repositories
                     Gross = g.Sum(i => i.Total),
                     ItemDiscounts = g.Sum(i => i.DiscountAmount)
                 })
-                .FirstOrDefaultAsync();
+                .ToListAsync()).FirstOrDefault();
 
             return new SalesTotalsRow
             {
@@ -187,7 +195,18 @@ namespace BillsSystem.Infrastructure.Repositories
                 .Take(take)
                 .ToListAsync();
         }
-        public async Task<bool> StripeSessionExistsAsync(string stripeSessionId) => await _context.Payments.AsNoTracking()
-                     .AnyAsync(p => p.StripeSessionId == stripeSessionId);
+        // IgnoreQueryFilters: الدفعة تتحسب حتى لو فاتورتها اتحذفت (Soft Delete)، عشان نفس الـ Session متتسجلش تاني
+        public async Task<bool> StripeSessionExistsAsync(string stripeSessionId) => await _context.Payments
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .AnyAsync(p => p.StripeSessionId == stripeSessionId);
+
+
+
+        public async Task<Bill?> GetByStripePaymentIntentAsync(string paymentIntentId)
+            => await Query.Include(b => b.Client)
+                          .Include(b => b.Payments)
+                          .AsSplitQuery()
+                          .FirstOrDefaultAsync(b => b.Payments.Any(p => p.StripePaymentIntentId == paymentIntentId));
     }
 }

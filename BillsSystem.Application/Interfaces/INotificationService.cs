@@ -16,6 +16,10 @@ namespace BillsSystem.Application.Interfaces
         Task<int> GetUnreadCountAsync();
         Task<PagedResult<Notification>> GetPagedAsync(int page, int pageSize, bool unreadOnly);
         Task MarkAsReadAsync(int id);
+
         Task MarkAllAsReadAsync();
+
+        // بيمسح الإشعارات الأقدم من العدد ده من الأيام (الحد الأدنى 7). بيرجّع عدد اللي اتمسح
+        Task<int> PurgeOldAsync(int olderThanDays);
     }
 }

@@ -19,14 +19,16 @@ namespace BillsSystem.Web.Controllers
         private readonly IClientService _clientService;
         private readonly IItemService _itemService;
         private readonly IReminderService _reminderService;
+        private readonly IConfiguration _configuration;
 
         public BillsController(IBillService billService, IClientService clientService, IItemService itemService,
-            IReminderService reminderService)
+            IReminderService reminderService, IConfiguration configuration)
         {
             _billService = billService;
             _clientService = clientService;
             _itemService = itemService;
             _reminderService = reminderService;
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Index(string? search, int page = 1)
@@ -188,8 +190,15 @@ namespace BillsSystem.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PayWithStripe(int id, decimal amount)
         {
-            var successUrl = Url.Action(nameof(StripeSuccess), "Bills", new { id }, Request.Scheme)!;
-            var cancelUrl = Url.Action(nameof(Details), "Bills", new { id }, Request.Scheme)!;
+            // App:PublicBaseUrl لو متظبط وصحيح (https) بنبني اللينكات منه، غير كده بنرجع لـ Host الطلب
+            var configured = _configuration["App:PublicBaseUrl"]?.Trim().TrimEnd('/');
+            var baseUrl = Uri.TryCreate(configured, UriKind.Absolute, out var parsedBase) && parsedBase.Scheme == Uri.UriSchemeHttps
+                ? configured
+                : null;
+            var successPath = Url.Action(nameof(StripeSuccess), "Bills", new { id })!;
+            var cancelPath = Url.Action(nameof(Details), "Bills", new { id })!;
+            var successUrl = baseUrl == null ? $"{Request.Scheme}://{Request.Host}{successPath}" : baseUrl + successPath;
+            var cancelUrl = baseUrl == null ? $"{Request.Scheme}://{Request.Host}{cancelPath}" : baseUrl + cancelPath;
 
             var (success, error, url) = await _billService.CreateStripeCheckoutAsync(id, amount, successUrl, cancelUrl);
             if (!success)
@@ -201,9 +210,14 @@ namespace BillsSystem.Web.Controllers
             return Redirect(url!);
         }
 
-        public IActionResult StripeSuccess(int id)
+        public async Task<IActionResult> StripeSuccess(int id, [FromQuery(Name = "session_id")] string? sessionId)
         {
-            TempData["SuccessMessage"] = "Payment received — it may take a few seconds to reflect on this page.";
+            // الـ Webhook هو اللي بيسجل الدفعة؛ مبنقولش "received" إلا لو اتسجلت فعلًا
+            if (!string.IsNullOrWhiteSpace(sessionId) && await _billService.IsStripePaymentRecordedAsync(id, sessionId))
+                TempData["SuccessMessage"] = "Stripe payment received and recorded";
+            else
+                TempData["SuccessMessage"] = "Back from Stripe. If you completed the payment it will appear here within a few seconds. Refresh to check";
+
             return RedirectToAction(nameof(Details), new { id });
         }
 

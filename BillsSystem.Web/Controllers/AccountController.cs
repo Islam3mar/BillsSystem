@@ -13,8 +13,13 @@ namespace BillsSystem.Web.Controllers
     public class AccountController : Controller
     {
         private readonly IAuthService _authService;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IAuthService authService) => _authService = authService;
+        public AccountController(IAuthService authService, ILogger<AccountController> logger)
+        {
+            _authService = authService;
+            _logger = logger;
+        }
 
         public IActionResult Login(string? returnUrl = null)
         {
@@ -36,9 +41,14 @@ namespace BillsSystem.Web.Controllers
             var isValid = await _authService.ValidateCredentialsAsync(model.Username, model.Password);
             if (!isValid)
             {
+                _logger.LogWarning("Failed login attempt for username '{Username}' from {Ip}",
+                    SafeForLog(model.Username), HttpContext.Connection.RemoteIpAddress);
                 ModelState.AddModelError(string.Empty, "Invalid username or password");
                 return View(model);
             }
+
+            _logger.LogInformation("Successful login for '{Username}' from {Ip}",
+                SafeForLog(model.Username), HttpContext.Connection.RemoteIpAddress);
 
             var claims = new List<Claim> { new(ClaimTypes.Name, model.Username) };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -62,5 +72,13 @@ namespace BillsSystem.Web.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction(nameof(Login));
         }
+
+        // اسم المستخدم جاي من برّه: نشيل الأسطر الجديدة (عشان محدش يزوّر سطور في اللوج) ونقص الطول
+        private static string SafeForLog(string? value)
+        {
+            var clean = (value ?? string.Empty).Replace('\r', ' ').Replace('\n', ' ');
+            return clean.Length > 50 ? clean[..50] : clean;
+        }
+
     }
 }

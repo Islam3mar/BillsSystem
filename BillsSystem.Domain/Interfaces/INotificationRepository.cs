@@ -12,5 +12,7 @@ namespace BillsSystem.Domain.Interfaces
         Task<int> CountAsync(bool unreadOnly);
         Task<int> MarkAsReadAsync(int id, DateTime now);
         Task<int> MarkAllAsReadAsync(DateTime now);
+
+        Task<int> DeleteOlderThanAsync(DateTime cutoff);
     }
 }

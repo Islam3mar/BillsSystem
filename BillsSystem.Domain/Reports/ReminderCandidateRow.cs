@@ -17,6 +17,8 @@ namespace BillsSystem.Domain.Reports
         public DateTime? LastReminderSentAt { get; set; }
         public ReminderType LastReminderType { get; set; }
 
+        public DateTime? LastReminderAttemptAt { get; set; }
+
         public int ClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
         public string? ClientEmail { get; set; }

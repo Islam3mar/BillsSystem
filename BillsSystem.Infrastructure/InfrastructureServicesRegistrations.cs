@@ -24,7 +24,8 @@ namespace BillsSystem.Infrastructure
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+       options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+           sql => sql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null)));
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 

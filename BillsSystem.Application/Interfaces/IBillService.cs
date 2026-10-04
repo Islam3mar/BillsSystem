@@ -21,5 +21,17 @@ namespace BillsSystem.Application.Interfaces
 
         Task<(bool Success, string? Error)> ConfirmStripePaymentAsync(
             string stripeSessionId, string? stripePaymentIntentId, decimal amount, int billId);
+
+
+        // هل الدفعة بتاعة الـ Session دي اتسجلت (بالـ Webhook) على الفاتورة دي؟
+        Task<bool> IsStripePaymentRecordedAsync(int billId, string stripeSessionId);
+
+
+
+        // استرداد من Stripe: لو كامل بنلغي الدفعة تلقائيًا، لو جزئي بنبلّغ الأدمن
+        Task<(bool Success, string? Error)> HandleStripeRefundAsync(string paymentIntentId, decimal totalRefunded);
+
+        // اعتراض على دفعة: تنبيه فقط
+        Task<(bool Success, string? Error)> HandleStripeDisputeAsync(string? paymentIntentId, decimal amount, string? reason);
     }
 }
