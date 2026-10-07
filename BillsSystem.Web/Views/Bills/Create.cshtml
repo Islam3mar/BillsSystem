@@ -3,9 +3,10 @@
 @{
     ViewData["Title"] = "Sales Invoice";
 }
+
 <style>
     .form-card {
-        max-width: 1100px; /* كانت غالبًا أضيق من كده، زوّدها لحد ما تريحك */
+        max-width: 1100px;
     }
 
     #itemsTable th,
@@ -21,6 +22,7 @@
         padding: 0.2rem 0.4rem;
     }
 </style>
+
 <div class="form-card">
     <h4>Sales Invoice</h4>
 
@@ -31,6 +33,7 @@
         <input type="hidden" asp-for="SubmissionId" />
 
         <h6 class="mt-2">Bills Details</h6>
+
         <div class="form-row">
             <label asp-for="BillDate"></label>
             <div class="flex-grow-1">
@@ -38,29 +41,36 @@
                 <span asp-validation-for="BillDate" class="text-danger"></span>
             </div>
         </div>
+
         <div class="form-row">
             <label>BILLS NUMBER</label>
             <div class="flex-grow-1">
                 <input class="form-control" value="Auto Generated" disabled />
             </div>
         </div>
+
         <div class="form-row">
             <label asp-for="ClientId">CLIENT NAME</label>
             <div class="flex-grow-1">
                 <select asp-for="ClientId" asp-items="ViewBag.Clients" class="form-select">
                     <option value="">Choose From Clients</option>
                 </select>
+
                 <span asp-validation-for="ClientId" class="text-danger"></span>
             </div>
         </div>
 
         <hr />
+
         <h6>Item Details</h6>
+
         <div class="form-row">
             <label>ITEMS NAME</label>
+
             <div class="flex-grow-1">
                 <select id="itemSelect" class="form-select">
                     <option value="">Choose From Items</option>
+
                     @foreach (var it in (SelectList)ViewBag.Items)
                     {
                         <option value="@it.Value">@it.Text</option>
@@ -68,33 +78,62 @@
                 </select>
             </div>
         </div>
+
         <div class="form-row">
             <label>SELLING PRICE</label>
+
             <div class="flex-grow-1">
-                <input id="sellingPriceInput" type="number" step="0.01" min="0" max="10000000" class="form-control" />
+                <input id="sellingPriceInput"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       max="10000000"
+                       class="form-control" />
+
+                <small id="minPriceHint" class="text-muted"></small>
             </div>
         </div>
+
         <div class="form-row">
             <label>QUANTITY</label>
+
             <div class="flex-grow-1">
-                <input id="quantityInput" type="number" step="1" min="1" max="1000000" class="form-control" />
+                <input id="quantityInput"
+                       type="number"
+                       step="1"
+                       min="1"
+                       max="1000000"
+                       class="form-control" />
+
                 <small id="stockHint" class="text-muted"></small>
             </div>
         </div>
+
         <div class="form-row">
             <label>TOTAL</label>
+
             <div class="flex-grow-1">
-                <input id="totalPreview" class="form-control" disabled />
+                <input id="totalPreview"
+                       class="form-control"
+                       disabled />
             </div>
         </div>
+
         <div class="form-actions">
-            <button type="button" id="addItemBtn" class="btn btn-save"><i class="bi bi-plus-lg"></i> Add</button>
+            <button type="button"
+                    id="addItemBtn"
+                    class="btn btn-save">
+                <i class="bi bi-plus-lg"></i> Add
+            </button>
         </div>
+
         <div id="itemError" class="text-danger mb-2"></div>
 
         <div class="list-card mt-2">
             <div class="table-responsive">
+
                 <table class="table table-bordered mb-0" id="itemsTable">
+
                     <thead>
                         <tr>
                             <th>Item Code</th>
@@ -109,374 +148,1725 @@
                             <th></th>
                         </tr>
                     </thead>
+
                     <tbody id="itemsTableBody">
+
                         @for (int i = 0; i < Model.Items.Count; i++)
                         {
-                            var total = Model.Items[i].SellingPrice * (Model.Items[i].Quantity ?? 0);
-                            var balance = Model.Items[i].DiscountType == DiscountType.Percentage
-                                ? total - (total * Model.Items[i].Discount / 100)
-                                : total - Model.Items[i].Discount;
+                            var total =
+                                Model.Items[i].SellingPrice *
+                                (Model.Items[i].Quantity ?? 0);
+
+                            var balance =
+                                Model.Items[i].DiscountType == DiscountType.Percentage
+                                    ? total - (total * Model.Items[i].Discount / 100)
+                                    : total - Model.Items[i].Discount;
 
                             <tr data-row>
+
                                 <td>
                                     @Model.Items[i].ItemId
-                                    <input type="hidden" name="Items[@i].ItemId" value="@Model.Items[i].ItemId" />
+
+                                    <input type="hidden"
+                                           name="Items[@i].ItemId"
+                                           value="@Model.Items[i].ItemId" />
                                 </td>
-                                <td>@Model.Items[i].ItemName</td>
-                                <td>@Model.Items[i].UnitName</td>
+
                                 <td>
-                                    @Model.Items[i].Quantity
-                                    <input type="hidden" name="Items[@i].Quantity" value="@Model.Items[i].Quantity" />
+                                    @Model.Items[i].ItemName
                                 </td>
+
+                                <td>
+                                    @Model.Items[i].UnitName
+                                </td>
+
+                                <td>
+                                    <span class="row-qty">
+                                        @Model.Items[i].Quantity
+                                    </span>
+
+                                    <input type="hidden"
+                                           name="Items[@i].Quantity"
+                                           value="@Model.Items[i].Quantity" />
+                                </td>
+
                                 <td>
                                     @Model.Items[i].SellingPrice.ToString("0.00")
-                                    <input type="hidden" name="Items[@i].SellingPrice" value="@Model.Items[i].SellingPrice" />
+
+                                    <input type="hidden"
+                                           name="Items[@i].SellingPrice"
+                                           value="@Model.Items[i].SellingPrice" />
                                 </td>
+
                                 <td>
-                                    <select class="form-select form-select-sm discount-type-select" name="Items[@i].DiscountType">
-                                        <option value="0" selected="@(Model.Items[i].DiscountType == DiscountType.Value)">Value</option>
-                                        <option value="1" selected="@(Model.Items[i].DiscountType == DiscountType.Percentage)">Percentage</option>
+                                    <select class="form-select form-select-sm discount-type-select"
+                                            name="Items[@i].DiscountType">
+
+                                        <option value="0"
+                                                selected="@(Model.Items[i].DiscountType == DiscountType.Value)">
+                                            Value
+                                        </option>
+
+                                        <option value="1"
+                                                selected="@(Model.Items[i].DiscountType == DiscountType.Percentage)">
+                                            Percentage
+                                        </option>
+
                                     </select>
                                 </td>
+
                                 <td>
-                                    <input type="number" step="0.01" class="form-control form-control-sm discount-input"
-                                           name="Items[@i].Discount" value="@Model.Items[i].Discount" />
+                                    <input type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm discount-input"
+                                           name="Items[@i].Discount"
+                                           value="@Model.Items[i].Discount" />
                                 </td>
-                                <td class="row-total">@total.ToString("0.00")</td>
-                                <td class="row-balance">@balance.ToString("0.00")</td>
-                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
+
+                                <td class="row-total">
+                                    @total.ToString("0.00")
+                                </td>
+
+                                <td class="row-balance">
+                                    @balance.ToString("0.00")
+                                </td>
+
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger remove-row-btn">
+                                        X
+                                    </button>
+                                </td>
+
                             </tr>
                         }
+
                     </tbody>
+
                 </table>
+
             </div>
         </div>
 
         <hr />
+
         <h6>Other Details</h6>
+
+        <div class="form-row">
+            <label>TOTAL BEFORE DISCOUNT</label>
+
+            <div class="flex-grow-1">
+                <input id="grossTotalPreview"
+                       class="form-control"
+                       disabled />
+            </div>
+        </div>
+
         <div class="form-row">
             <label>BILLS TOTAL</label>
+
             <div class="flex-grow-1">
-                <input id="billsTotalPreview" class="form-control" disabled />
+                <input id="billsTotalPreview"
+                       class="form-control"
+                       disabled />
             </div>
         </div>
 
-        <!-- بيتحدد أوتوماتيك حسب آخر حقل كتب فيه اليوزر (Percentage أو Value) -->
-        <input type="hidden" asp-for="DiscountType" id="discountTypeInput" />
+        <!--
+            دايمًا Value (0)
+            والقيمة المبعوتة للسيرفر = الخصم الإضافي على الفاتورة فقط
+        -->
+
+        <input type="hidden"
+               name="DiscountType"
+               value="0" />
+
+        <input type="hidden"
+               name="ValueDiscount"
+               id="valueDiscountHidden"
+               value="@Model.ValueDiscount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
+
+        <!--
+            الحقلين دول للعرض والكتابة فقط
+            ومن غير name
+            السيرفر بيستقبل الـ hidden فوق
+        -->
 
         <div class="form-row">
-            <label asp-for="PercentageDiscount">PERCENTAGE DISCOUNT</label>
+            <label>PERCENTAGE DISCOUNT</label>
+
             <div class="flex-grow-1">
-                <input asp-for="PercentageDiscount" id="percentageDiscountInput" type="number" step="0.0001" min="0" max="100" class="form-control" />
-                <span asp-validation-for="PercentageDiscount" class="text-danger"></span>
+
+                <input id="percentageDiscountInput"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       max="100"
+                       class="form-control" />
+
             </div>
         </div>
+
         <div class="form-row">
-            <label asp-for="ValueDiscount">VALUE DISCOUNT</label>
+
+            <label>VALUE DISCOUNT</label>
+
             <div class="flex-grow-1">
-                <input asp-for="ValueDiscount" id="valueDiscountInput" type="number" step="0.01" class="form-control" />
-                <span asp-validation-for="ValueDiscount" class="text-danger"></span>
-                <small class="text-muted">اكتب في أي حقل من الاتنين — اللي بتكتب فيه هو اللي هيتخصم بالظبط، والتاني بيتحدث للعرض بس.</small>
+
+                <input id="valueDiscountInput"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       class="form-control" />
+
+                <span asp-validation-for="ValueDiscount"
+                      class="text-danger"></span>
+
+                <small id="discountHint"
+                       class="text-muted d-block">
+
+                    بتتحسب تلقائي من خصومات الأصناف.
+                    تقدر تكتب في أي حقل من الاتنين لو عاوز خصم أكبر على الفاتورة،
+                    والتاني بيتحدث.
+
+                </small>
+
             </div>
         </div>
+
         <div class="form-row">
+
             <label>THE NET</label>
+
             <div class="flex-grow-1">
-                <input id="theNetPreview" class="form-control" disabled />
+
+                <input id="theNetPreview"
+                       class="form-control"
+                       disabled />
+
             </div>
         </div>
+
         <div class="form-row">
+
             <label asp-for="PaidUp">PAID UP</label>
+
             <div class="flex-grow-1">
-                <input asp-for="PaidUp" id="paidUpInput" type="number" step="0.01" class="form-control" />
-                <span asp-validation-for="PaidUp" class="text-danger"></span>
+
+                <input asp-for="PaidUp"
+                       id="paidUpInput"
+                       type="number"
+                       step="0.01"
+                       class="form-control" />
+
+                <span asp-validation-for="PaidUp"
+                      class="text-danger"></span>
+
             </div>
         </div>
+
         <div class="form-row">
+
             <label>THE REST</label>
+
             <div class="flex-grow-1">
-                <input id="theRestPreview" class="form-control" disabled />
+
+                <input id="theRestPreview"
+                       class="form-control"
+                       disabled />
+
             </div>
         </div>
+
         <div class="form-row" id="dueDateRow">
+
             <label asp-for="DueDate"></label>
+
             <div class="flex-grow-1">
-                <input asp-for="DueDate" type="date" class="form-control" />
-                <span asp-validation-for="DueDate" class="text-danger"></span>
-                <small class="text-muted d-block">Optional. The client is emailed a reminder before this date and again if it passes unpaid (needs an email on the client).</small>
+
+                <input asp-for="DueDate"
+                       type="date"
+                       class="form-control" />
+
+                <span asp-validation-for="DueDate"
+                      class="text-danger"></span>
+
+                <small class="text-muted d-block">
+
+                    Optional. The client is emailed a reminder before this date
+                    and again if it passes unpaid
+                    (needs an email on the client).
+
+                </small>
+
                 <div class="d-flex gap-1 mt-1">
-                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="7">+7 days</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="15">+15 days</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary due-days-btn" data-days="30">+30 days</button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary due-days-btn"
+                            data-days="7">
+                        +7 days
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary due-days-btn"
+                            data-days="15">
+                        +15 days
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary due-days-btn"
+                            data-days="30">
+                        +30 days
+                    </button>
+
                 </div>
+
             </div>
         </div>
 
         <div class="form-actions">
-            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
-            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+
+            <a asp-action="Index"
+               class="btn btn-cancel">
+                <i class="bi bi-trash"></i> Cancel
+            </a>
+
+            <button type="submit"
+                    class="btn btn-save">
+
+                <i class="bi bi-pencil-square"></i> Save
+
+            </button>
+
         </div>
+
     </form>
 </div>
 
 @section Scripts {
+
     @await Html.PartialAsync("_ValidationScriptsPartial")
+
     <script>
+
         let rowIndex = @Model.Items.Count;
 
-        const itemSelect = document.getElementById('itemSelect');
-        const sellingPriceInput = document.getElementById('sellingPriceInput');
-        const quantityInput = document.getElementById('quantityInput');
-        const totalPreview = document.getElementById('totalPreview');
-        const itemsTableBody = document.getElementById('itemsTableBody');
-        const itemError = document.getElementById('itemError');
-        const stockHint = document.getElementById('stockHint');
-        const dueDateRow = document.getElementById('dueDateRow');
-        const dueDateInput = document.getElementById('DueDate');
+        const itemSelect =
+            document.getElementById('itemSelect');
 
-        const MAX_PRICE = 10000000, MAX_QTY = 1000000;
-        const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
-        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const sellingPriceInput =
+            document.getElementById('sellingPriceInput');
 
-        // مجموع الكمية المضافة فعلًا من نفس الصنف في الجدول
-        function addedQty(itemId) {
-            let sum = 0;
-            document.querySelectorAll('#itemsTableBody tr[data-row]').forEach(r => {
-                if (r.querySelector('input[name$=".ItemId"]').value === String(itemId))
-                    sum += parseInt(r.querySelector('input[name$=".Quantity"]').value) || 0;
-            });
-            return sum;
+        const quantityInput =
+            document.getElementById('quantityInput');
+
+        const totalPreview =
+            document.getElementById('totalPreview');
+
+        const itemsTableBody =
+            document.getElementById('itemsTableBody');
+
+        const itemError =
+            document.getElementById('itemError');
+
+        const stockHint =
+            document.getElementById('stockHint');
+
+        const minPriceHint =
+            document.getElementById('minPriceHint');
+
+        const dueDateRow =
+            document.getElementById('dueDateRow');
+
+        const dueDateInput =
+            document.getElementById('DueDate');
+
+
+        // ================= OTHER DETAILS =================
+
+        const percentageInput =
+            document.getElementById('percentageDiscountInput');
+
+        const valueDiscountInput =
+            document.getElementById('valueDiscountInput');
+
+        const valueDiscountHidden =
+            document.getElementById('valueDiscountHidden');
+
+        const discountHint =
+            document.getElementById('discountHint');
+
+        const paidUpInput =
+            document.getElementById('paidUpInput');
+
+
+        // قيمة الخصم الإضافي اللي رجعت من السيرفر
+        // لو الفورم رجع بعد فشل Validation
+
+        const initialExtraDiscount =
+            parseFloat(valueDiscountHidden.value) || 0;
+
+        const defaultDiscountHint =
+            discountHint.textContent;
+
+
+        const MAX_PRICE = 10000000,
+              MAX_QTY = 1000000;
+
+
+        const round2 =
+            n => Math.round((n + Number.EPSILON) * 100) / 100;
+
+
+        const esc =
+            s => String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[c]));
+
+
+        // =========================================================
+        // أدوات الجدول
+        // =========================================================
+
+        function allRows() {
+
+            return Array.from(
+                document.querySelectorAll(
+                    '#itemsTableBody tr[data-row]'
+                )
+            );
+
         }
 
-        // بتعيد ترقيم الصفوف 0..n-1 عشان الـ Model Binder ميقفش عند أول فجوة
-function reindexRows() {
-    const rows = document.querySelectorAll('#itemsTableBody tr[data-row]');
-    rows.forEach((row, i) => {
-        row.querySelectorAll('[name^="Items["]').forEach(el => {
-            el.name = el.name.replace(/^Items\[\d+\]/, 'Items[' + i + ']');
-        });
-    });
-    rowIndex = rows.length;
-}
+
+        function rowItemId(r) {
+
+            return r.querySelector(
+                'input[name$=".ItemId"]'
+            ).value;
+
+        }
 
 
+        function rowQtyInput(r) {
 
-        // ---------- لما يختار صنف: نجيب سعره ووحدته ----------
-        itemSelect.addEventListener('change', function () {
-            itemError.textContent = '';
-            sellingPriceInput.dataset.stock = '';
-            stockHint.textContent = '';
-            if (!this.value) { sellingPriceInput.value = ''; return; }
+            return r.querySelector(
+                'input[name$=".Quantity"]'
+            );
 
-            fetch('/Bills/GetItemDetails?itemId=' + this.value)
-                .then(res => res.json())
-                .then(data => {
-                    if (!data) return;
-                    sellingPriceInput.value = data.sellingPrice;
-                    sellingPriceInput.dataset.unitName = data.unitName;
-                    sellingPriceInput.dataset.itemName = data.itemName;
-                    sellingPriceInput.dataset.stock = data.stock;
-                    stockHint.textContent = 'Available: ' + data.stock;
-                    updateTotalPreview();
+        }
+
+
+        function rowPrice(r) {
+
+            return parseFloat(
+                r.querySelector(
+                    'input[name$=".SellingPrice"]'
+                ).value
+            ) || 0;
+
+        }
+
+
+        function findRow(itemId) {
+
+            return allRows().find(
+                r => rowItemId(r) === String(itemId)
+            );
+
+        }
+
+
+        // مجموع الكمية المضافة فعلًا من نفس الصنف
+
+        function addedQty(itemId) {
+
+            let sum = 0;
+
+            allRows().forEach(r => {
+
+                if (
+                    rowItemId(r) === String(itemId)
+                ) {
+
+                    sum +=
+                        parseInt(
+                            rowQtyInput(r).value
+                        ) || 0;
+
+                }
+
+            });
+
+            return sum;
+
+        }
+
+
+        // إعادة ترقيم الصفوف
+
+        function reindexRows() {
+
+            const rows = allRows();
+
+            rows.forEach((row, i) => {
+
+                row.querySelectorAll(
+                    '[name^="Items["]'
+                ).forEach(el => {
+
+                    el.name =
+                        el.name.replace(
+                            /^Items\[\d+\]/,
+                            'Items[' + i + ']'
+                        );
+
                 });
-        });
+
+            });
+
+            rowIndex = rows.length;
+
+        }
+
+
+        // =========================================================
+        // Available
+        // =========================================================
+
+        function refreshStockHint() {
+
+            const stock =
+                parseInt(
+                    sellingPriceInput.dataset.stock
+                );
+
+            if (
+                !itemSelect.value ||
+                isNaN(stock)
+            ) {
+
+                stockHint.textContent = '';
+                return;
+
+            }
+
+            stockHint.textContent =
+                'Available: ' +
+                Math.max(
+                    stock -
+                    addedQty(itemSelect.value),
+                    0
+                );
+
+        }
+
+
+        // =========================================================
+        // اختيار الصنف
+        // =========================================================
+
+        itemSelect.addEventListener(
+            'change',
+            function () {
+
+                itemError.textContent = '';
+
+                sellingPriceInput.dataset.stock = '';
+                sellingPriceInput.dataset.minPrice = '';
+
+                sellingPriceInput.removeAttribute('min');
+
+                stockHint.textContent = '';
+                minPriceHint.textContent = '';
+
+
+                if (!this.value) {
+
+                    sellingPriceInput.value = '';
+                    return;
+
+                }
+
+
+                const requestedId =
+                    this.value;
+
+
+                fetch(
+                    '/Bills/GetItemDetails?itemId=' +
+                    requestedId
+                )
+
+                .then(res => res.json())
+
+                .then(data => {
+
+                    if (
+                        !data ||
+                        itemSelect.value !== requestedId
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    // =================================================
+                    // لو الصنف موجود في الجدول
+                    // نكمل بنفس السعر عشان الدمج
+                    // =================================================
+
+                    const existing =
+                        findRow(requestedId);
+
+
+                    sellingPriceInput.value =
+                        existing
+                            ? rowPrice(existing)
+                            : data.sellingPrice;
+
+
+                    sellingPriceInput.dataset.unitName =
+                        data.unitName;
+
+                    sellingPriceInput.dataset.itemName =
+                        data.itemName;
+
+                    sellingPriceInput.dataset.stock =
+                        data.stock;
+
+
+                    // أقل سعر مسموح
+                    sellingPriceInput.dataset.minPrice =
+                        data.sellingPrice;
+
+
+                    sellingPriceInput.min =
+                        data.sellingPrice;
+
+
+                    minPriceHint.textContent =
+                        'Minimum price: ' +
+                        Number(
+                            data.sellingPrice
+                        ).toFixed(2);
+
+
+                    refreshStockHint();
+
+                    updateTotalPreview();
+
+                });
+
+            }
+        );
+
 
         function updateTotalPreview() {
-            const price = parseFloat(sellingPriceInput.value) || 0;
-            const qty = parseInt(quantityInput.value) || 0;
-            totalPreview.value = (price * qty).toFixed(2);
+
+            const price =
+                parseFloat(
+                    sellingPriceInput.value
+                ) || 0;
+
+            const qty =
+                parseInt(
+                    quantityInput.value
+                ) || 0;
+
+
+            totalPreview.value =
+                (price * qty).toFixed(2);
+
         }
-        sellingPriceInput.addEventListener('input', updateTotalPreview);
-        quantityInput.addEventListener('input', updateTotalPreview);
 
-        // ---------- زرار Add: بيضيف صف جديد للجدول ----------
-        document.getElementById('addItemBtn').addEventListener('click', function () {
-            itemError.textContent = '';
 
-            const itemId = itemSelect.value;
-            const itemName = sellingPriceInput.dataset.itemName || itemSelect.options[itemSelect.selectedIndex].text;
-            const unitName = sellingPriceInput.dataset.unitName || '';
-            const price = parseFloat(sellingPriceInput.value) || 0;
-            const qty = parseInt(quantityInput.value) || 0;
+        sellingPriceInput.addEventListener(
+            'input',
+            updateTotalPreview
+        );
 
-            if (!itemId) { itemError.textContent = 'ITEM NAME is Required'; return; }
-            if (quantityInput.value.trim() === '') { itemError.textContent = 'Quantity is Required'; return; }
-            if (qty <= 0) { itemError.textContent = 'Quantity Must be Greater than Zero'; return; }
-            if (qty > MAX_QTY) { itemError.textContent = 'Quantity can\'t exceed ' + MAX_QTY; return; }
-            if (price < 0 || price > MAX_PRICE) { itemError.textContent = 'SELLING PRICE must be between 0 and ' + MAX_PRICE; return; }
 
-            const stock = parseInt(sellingPriceInput.dataset.stock);
-            if (!isNaN(stock) && addedQty(itemId) + qty > stock) {
-                itemError.textContent = 'Only ' + Math.max(stock - addedQty(itemId), 0) + ' available in stock';
-                return;
+        quantityInput.addEventListener(
+            'input',
+            updateTotalPreview
+        );
+
+
+        // =========================================================
+        // زرار Add
+        // =========================================================
+
+        document.getElementById(
+            'addItemBtn'
+        ).addEventListener(
+            'click',
+            function () {
+
+                itemError.textContent = '';
+
+
+                const itemId =
+                    itemSelect.value;
+
+
+                const itemName =
+                    sellingPriceInput.dataset.itemName ||
+                    (
+                        itemSelect.selectedIndex > 0
+                            ? itemSelect.options[
+                                itemSelect.selectedIndex
+                            ].text
+                            : ''
+                    );
+
+
+                const unitName =
+                    sellingPriceInput.dataset.unitName || '';
+
+
+                const price =
+                    round2(
+                        parseFloat(
+                            sellingPriceInput.value
+                        ) || 0
+                    );
+
+
+                const qty =
+                    parseInt(
+                        quantityInput.value
+                    ) || 0;
+
+
+                const minPrice =
+                    parseFloat(
+                        sellingPriceInput.dataset.minPrice
+                    );
+
+
+                // =================================================
+                // Validation
+                // =================================================
+
+                if (!itemId) {
+
+                    itemError.textContent =
+                        'ITEM NAME is Required';
+
+                    return;
+
+                }
+
+
+                if (
+                    quantityInput.value.trim() === ''
+                ) {
+
+                    itemError.textContent =
+                        'Quantity is Required';
+
+                    return;
+
+                }
+
+
+                if (qty <= 0) {
+
+                    itemError.textContent =
+                        'Quantity Must be Greater than Zero';
+
+                    return;
+
+                }
+
+
+                if (qty > MAX_QTY) {
+
+                    itemError.textContent =
+                        'Quantity can\'t exceed ' +
+                        MAX_QTY;
+
+                    return;
+
+                }
+
+
+                if (
+                    price < 0 ||
+                    price > MAX_PRICE
+                ) {
+
+                    itemError.textContent =
+                        'SELLING PRICE must be between 0 and ' +
+                        MAX_PRICE;
+
+                    return;
+
+                }
+
+
+                // =================================================
+                // التعديل 1
+                // ممنوع سعر أقل من سعر الصنف المسجل
+                //
+                // مثال:
+                // سعر الصنف = 1600
+                // المستخدم كتب = 1500
+                // => ممنوع الإضافة
+                // =================================================
+
+                if (
+                    !isNaN(minPrice) &&
+                    price < minPrice
+                ) {
+
+                    itemError.textContent =
+                        'SELLING PRICE can\'t be less than ' +
+                        minPrice.toFixed(2) +
+                        ' (the item\'s price)';
+
+                    sellingPriceInput.focus();
+
+                    return;
+
+                }
+
+
+                // =================================================
+                // التحقق من المخزون
+                // =================================================
+
+                const stock =
+                    parseInt(
+                        sellingPriceInput.dataset.stock
+                    );
+
+
+                const already =
+                    addedQty(itemId);
+
+
+                if (
+                    !isNaN(stock) &&
+                    already + qty > stock
+                ) {
+
+                    itemError.textContent =
+                        'Only ' +
+                        Math.max(
+                            stock - already,
+                            0
+                        ) +
+                        ' available in stock';
+
+                    return;
+
+                }
+
+
+                // =================================================
+                // التعديل 2
+                // لو الصنف موجود → ندمجه في نفس الصف
+                // =================================================
+
+                const existing =
+                    findRow(itemId);
+
+
+                if (existing) {
+
+                    const existingPrice =
+                        round2(
+                            rowPrice(existing)
+                        );
+
+
+                    // لازم نفس السعر
+
+                    if (
+                        existingPrice !== price
+                    ) {
+
+                        itemError.textContent =
+                            'This item is already in the invoice with price ' +
+                            existingPrice.toFixed(2) +
+                            '. Use the same price, or remove the row first.';
+
+                        return;
+
+                    }
+
+
+                    const newQty =
+                        already + qty;
+
+
+                    if (
+                        newQty > MAX_QTY
+                    ) {
+
+                        itemError.textContent =
+                            'Quantity can\'t exceed ' +
+                            MAX_QTY;
+
+                        return;
+
+                    }
+
+
+                    // تحديث الكمية
+
+                    rowQtyInput(existing).value =
+                        newQty;
+
+
+                    existing.querySelector(
+                        '.row-qty'
+                    ).textContent =
+                        newQty;
+
+
+                    // تحديث Total
+
+                    existing.querySelector(
+                        '.row-total'
+                    ).textContent =
+                        round2(
+                            price * newQty
+                        ).toFixed(2);
+
+
+                }
+                else {
+
+                    // =================================================
+                    // إضافة صف جديد
+                    // =================================================
+
+                    const total =
+                        round2(
+                            price * qty
+                        );
+
+
+                    const index =
+                        rowIndex++;
+
+
+                    const row =
+                        document.createElement('tr');
+
+
+                    row.setAttribute(
+                        'data-row',
+                        ''
+                    );
+
+
+                    row.innerHTML = `
+
+                        <td>
+                            ${itemId}
+                            <input type="hidden"
+                                   name="Items[${index}].ItemId"
+                                   value="${itemId}" />
+                        </td>
+
+                        <td>
+                            ${esc(itemName)}
+                        </td>
+
+                        <td>
+                            ${esc(unitName)}
+                        </td>
+
+                        <td>
+                            <span class="row-qty">
+                                ${qty}
+                            </span>
+
+                            <input type="hidden"
+                                   name="Items[${index}].Quantity"
+                                   value="${qty}" />
+                        </td>
+
+                        <td>
+                            ${price.toFixed(2)}
+
+                            <input type="hidden"
+                                   name="Items[${index}].SellingPrice"
+                                   value="${price}" />
+                        </td>
+
+                        <td>
+                            <select
+                                class="form-select form-select-sm discount-type-select"
+                                name="Items[${index}].DiscountType">
+
+                                <option value="0"
+                                        selected>
+                                    Value
+                                </option>
+
+                                <option value="1">
+                                    Percentage
+                                </option>
+
+                            </select>
+                        </td>
+
+                        <td>
+
+                            <input type="number"
+                                   step="0.01"
+                                   class="form-control form-control-sm discount-input"
+                                   name="Items[${index}].Discount"
+                                   value="0" />
+
+                        </td>
+
+                        <td class="row-total">
+                            ${total.toFixed(2)}
+                        </td>
+
+                        <td class="row-balance">
+                            ${total.toFixed(2)}
+                        </td>
+
+                        <td>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger remove-row-btn">
+                                X
+                            </button>
+
+                        </td>
+
+                    `;
+
+
+                    itemsTableBody.appendChild(row);
+
+                }
+
+
+                // =================================================
+                // Reset Form
+                // =================================================
+
+                itemSelect.value = '';
+
+                sellingPriceInput.value = '';
+
+                quantityInput.value = '';
+
+                totalPreview.value = '';
+
+                stockHint.textContent = '';
+
+                minPriceHint.textContent = '';
+
+                sellingPriceInput.dataset.stock = '';
+
+                sellingPriceInput.dataset.minPrice = '';
+
+                sellingPriceInput.removeAttribute('min');
+
+
+                recalculateAll();
+
             }
+        );
 
-            const total = round2(price * qty);
-            const index = rowIndex++;
 
-            const row = document.createElement('tr');
-            row.setAttribute('data-row', '');
-            row.innerHTML = `
-                                <td>${itemId}<input type="hidden" name="Items[${index}].ItemId" value="${itemId}" /></td>
-                                <td>${esc(itemName)}</td>
-                                <td>${esc(unitName)}</td>
-                                <td>${qty}<input type="hidden" name="Items[${index}].Quantity" value="${qty}" /></td>
-                                <td>${price.toFixed(2)}<input type="hidden" name="Items[${index}].SellingPrice" value="${price}" /></td>
-                                <td>
-                                    <select class="form-select form-select-sm discount-type-select" name="Items[${index}].DiscountType">
-                                        <option value="0" selected>Value</option>
-                                        <option value="1">Percentage</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" step="0.01" class="form-control form-control-sm discount-input" name="Items[${index}].Discount" value="0" /></td>
-                                <td class="row-total">${total.toFixed(2)}</td>
-                                <td class="row-balance">${total.toFixed(2)}</td>
-                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row-btn">X</button></td>
-                            `;
-            itemsTableBody.appendChild(row);
+        // =========================================================
+        // تغيير الخصم
+        // =========================================================
 
-            // إعادة تعيين فورم الإضافة
-            itemSelect.value = '';
-            sellingPriceInput.value = '';
-            quantityInput.value = '';
-            totalPreview.value = '';
-            stockHint.textContent = '';
-            sellingPriceInput.dataset.stock = '';
+        itemsTableBody.addEventListener(
+            'input',
+            function (e) {
 
-            recalculateAll();
-        });
+                if (
+                    !e.target.classList.contains(
+                        'discount-input'
+                    )
+                ) {
 
-        // ---------- تغيير الخصم أو نوعه في أي صف ----------
-        itemsTableBody.addEventListener('input', function (e) {
-            if (!e.target.classList.contains('discount-input')) return;
-            recalculateAll();
-        });
-        itemsTableBody.addEventListener('change', function (e) {
-            if (!e.target.classList.contains('discount-type-select')) return;
-            recalculateAll();
-        });
+                    return;
 
-        // ---------- حذف صف ----------
-     itemsTableBody.addEventListener('click', function (e) {
-    if (!e.target.classList.contains('remove-row-btn')) return;
-    e.target.closest('tr').remove();
-    reindexRows();          // <-- جديد
-    recalculateAll();
-});
+                }
+
+                recalculateAll();
+
+            }
+        );
+
+
+        itemsTableBody.addEventListener(
+            'change',
+            function (e) {
+
+                if (
+                    !e.target.classList.contains(
+                        'discount-type-select'
+                    )
+                ) {
+
+                    return;
+
+                }
+
+                recalculateAll();
+
+            }
+        );
+
+
+        // =========================================================
+        // حذف صف
+        // =========================================================
+
+        itemsTableBody.addEventListener(
+            'click',
+            function (e) {
+
+                if (
+                    !e.target.classList.contains(
+                        'remove-row-btn'
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                e.target
+                    .closest('tr')
+                    .remove();
+
+
+                reindexRows();
+
+
+                recalculateAll();
+
+
+                // Available يرجع يتحدث
+                refreshStockHint();
+
+            }
+        );
+
+
+        // =========================================================
+        // الحسابات
+        // =========================================================
+
+        const totals = {
+            gross: 0,
+            itemsDisc: 0,
+            billsTotal: 0
+        };
+
+
+        // مصدر خصم الفاتورة الكلي
+
+        let overallSource = 'auto';
+
+        let typedPct = 0,
+            typedVal = 0;
+
 
         function recalculateAll() {
-            let billsTotal = 0;
 
-            document.querySelectorAll('#itemsTableBody tr[data-row]').forEach(row => {
-                const total = parseFloat(row.querySelector('.row-total').textContent) || 0;
-                const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
-                const type = row.querySelector('.discount-type-select').value; // "0" Value / "1" Percentage
-                const discountAmount = round2(type === '1' ? total * discount / 100 : discount);
-                const balance = round2(total - discountAmount);
+            let gross = 0,
+                billsTotal = 0;
 
-                // الخصم أكبر من إجمالي الصنف → نلوّنه وميتحفظش
-                row.querySelector('.discount-input').classList.toggle('is-invalid', balance < 0 || (type === '1' && discount > 100));
 
-                row.querySelector('.row-balance').textContent = balance.toFixed(2);
-                billsTotal = round2(billsTotal + balance);
+            allRows().forEach(row => {
+
+                const total =
+                    parseFloat(
+                        row.querySelector(
+                            '.row-total'
+                        ).textContent
+                    ) || 0;
+
+
+                const discount =
+                    parseFloat(
+                        row.querySelector(
+                            '.discount-input'
+                        ).value
+                    ) || 0;
+
+
+                const type =
+                    row.querySelector(
+                        '.discount-type-select'
+                    ).value;
+
+
+                // 0 = Value
+                // 1 = Percentage
+
+                const discountAmount =
+                    round2(
+                        type === '1'
+                            ? total * discount / 100
+                            : discount
+                    );
+
+
+                const balance =
+                    round2(
+                        total - discountAmount
+                    );
+
+
+                // الخصم أكبر من إجمالي الصنف
+
+                row.querySelector(
+                    '.discount-input'
+                ).classList.toggle(
+                    'is-invalid',
+                    balance < 0 ||
+                    (
+                        type === '1' &&
+                        discount > 100
+                    )
+                );
+
+
+                row.querySelector(
+                    '.row-balance'
+                ).textContent =
+                    balance.toFixed(2);
+
+
+                gross =
+                    round2(
+                        gross + total
+                    );
+
+
+                billsTotal =
+                    round2(
+                        billsTotal + balance
+                    );
+
             });
 
-            document.getElementById('billsTotalPreview').value = billsTotal.toFixed(2);
-            recalculateOtherDetails(billsTotal);
+
+            totals.gross =
+                gross;
+
+
+            totals.billsTotal =
+                billsTotal;
+
+
+            // مجموع خصومات الأصناف
+
+            totals.itemsDisc =
+                round2(
+                    gross - billsTotal
+                );
+
+
+            document.getElementById(
+                'grossTotalPreview'
+            ).value =
+                gross.toFixed(2);
+
+
+            document.getElementById(
+                'billsTotalPreview'
+            ).value =
+                billsTotal.toFixed(2);
+
+
+            refreshSummary();
+
         }
 
-        // ---------- Other Details: Percentage <-> Value على مستوى الفاتورة ----------
-        const percentageInput = document.getElementById('percentageDiscountInput');
-        const valueDiscountInput = document.getElementById('valueDiscountInput');
-        const discountTypeInput = document.getElementById('discountTypeInput');
-        const paidUpInput = document.getElementById('paidUpInput');
 
-        function currentBillsTotal() {
-            return parseFloat(document.getElementById('billsTotalPreview').value) || 0;
+        // =========================================================
+        // حساب خصم الفاتورة
+        // =========================================================
+
+        function refreshSummary(skipEl) {
+
+            const {
+                gross,
+                itemsDisc,
+                billsTotal
+            } = totals;
+
+
+            // إجمالي خصم الفاتورة
+            // = خصومات الأصناف + أي خصم إضافي
+
+            let overall;
+
+
+            if (
+                overallSource === 'pct'
+            ) {
+
+                overall =
+                    round2(
+                        gross *
+                        typedPct /
+                        100
+                    );
+
+            }
+            else if (
+                overallSource === 'val'
+            ) {
+
+                overall =
+                    round2(
+                        typedVal
+                    );
+
+            }
+            else {
+
+                overall =
+                    itemsDisc;
+
+            }
+
+
+            // تحديث Percentage
+
+            if (
+                overallSource !== 'pct' &&
+                skipEl !== percentageInput
+            ) {
+
+                percentageInput.value =
+                    gross > 0
+                        ? (
+                            overall /
+                            gross *
+                            100
+                        ).toFixed(2)
+                        : '0.00';
+
+            }
+
+
+            // تحديث Value
+
+            if (
+                overallSource !== 'val' &&
+                skipEl !== valueDiscountInput
+            ) {
+
+                valueDiscountInput.value =
+                    overall.toFixed(2);
+
+            }
+
+
+            // =====================================================
+            // الخصم الإضافي فقط
+            //
+            // Overall Discount
+            // -
+            // Item Discounts
+            // =====================================================
+
+            let extra =
+                round2(
+                    overall -
+                    itemsDisc
+                );
+
+
+            // فرق تقريب بسيط
+
+            if (
+                extra < 0 &&
+                extra > -0.011
+            ) {
+
+                extra = 0;
+
+            }
+
+
+            const tooLow =
+                extra < 0;
+
+
+            const tooHigh =
+                extra > billsTotal;
+
+
+            const invalid =
+                tooLow ||
+                tooHigh;
+
+
+            // تلوين الحقول
+
+            percentageInput.classList.toggle(
+                'is-invalid',
+                invalid
+            );
+
+
+            valueDiscountInput.classList.toggle(
+                'is-invalid',
+                invalid
+            );
+
+
+            discountHint.classList.toggle(
+                'text-danger',
+                invalid
+            );
+
+
+            discountHint.textContent =
+                tooLow
+
+                    ? 'Discount can\'t be less than the items\' discounts (' +
+                      itemsDisc.toFixed(2) +
+                      ')'
+
+                    : tooHigh
+
+                        ? 'Discount can\'t exceed the bills total'
+
+                        : defaultDiscountHint;
+
+
+            // =====================================================
+            // القيمة اللي هتتبعت للسيرفر
+            // = الخصم الإضافي فقط
+            // =====================================================
+
+            const safeExtra =
+                invalid
+                    ? 0
+                    : extra;
+
+
+            valueDiscountHidden.value =
+                safeExtra.toFixed(2);
+
+
+            // =====================================================
+            // Net
+            // =====================================================
+
+            const paid =
+                parseFloat(
+                    paidUpInput.value
+                ) || 0;
+
+
+            const net =
+                round2(
+                    billsTotal -
+                    safeExtra
+                );
+
+
+            const rest =
+                round2(
+                    net -
+                    paid
+                );
+
+
+            document.getElementById(
+                'theNetPreview'
+            ).value =
+                net.toFixed(2);
+
+
+            document.getElementById(
+                'theRestPreview'
+            ).value =
+                rest.toFixed(2);
+
+
+            document.getElementById(
+                'theRestPreview'
+            ).classList.toggle(
+                'is-invalid',
+                rest < 0
+            );
+
+
+            // ميعاد السداد يظهر فقط لو فيه متبقي
+
+            dueDateRow.style.display =
+                rest > 0
+                    ? ''
+                    : 'none';
+
+
+            if (
+                rest <= 0
+            ) {
+
+                dueDateInput.value = '';
+
+            }
+
         }
 
-        function recalculateOtherDetails(billsTotal) {
-            const paid = parseFloat(paidUpInput.value) || 0;
-            let valueDiscount;
 
-            if (discountTypeInput.value === '0') {
-                // Value هي المصدر الحالي، بتتخصم بالظبط زي ما اتكتبت
-                valueDiscount = round2(parseFloat(valueDiscountInput.value) || 0);
-            } else {
-                // Percentage هي المصدر الحالي
-                const pct = parseFloat(percentageInput.value) || 0;
-                valueDiscount = round2(billsTotal * pct / 100);
+        // =========================================================
+        // اليوزر كتب في Percentage
+        // =========================================================
+
+        percentageInput.addEventListener(
+            'input',
+            function () {
+
+                const v =
+                    this.value.trim();
+
+
+                if (v === '') {
+
+                    overallSource =
+                        'auto';
+
+                }
+                else {
+
+                    overallSource =
+                        'pct';
+
+                    typedPct =
+                        parseFloat(v) || 0;
+
+                }
+
+
+                refreshSummary(this);
+
             }
+        );
 
-            const net = round2(billsTotal - valueDiscount);   // نفس تقريب السيرفر
-            const rest = round2(net - paid);
-            document.getElementById('theRestPreview').classList.toggle('is-invalid', rest < 0);
 
-            document.getElementById('theNetPreview').value = net.toFixed(2);
-            document.getElementById('theRestPreview').value = rest.toFixed(2);
+        // =========================================================
+        // اليوزر كتب في Value
+        // =========================================================
 
-            // ميعاد السداد منطقي بس لو فيه متبقي
-            dueDateRow.style.display = rest > 0 ? '' : 'none';
-            if (rest <= 0) dueDateInput.value = '';
+        valueDiscountInput.addEventListener(
+            'input',
+            function () {
+
+                const v =
+                    this.value.trim();
+
+
+                if (v === '') {
+
+                    overallSource =
+                        'auto';
+
+                }
+                else {
+
+                    overallSource =
+                        'val';
+
+                    typedVal =
+                        parseFloat(v) || 0;
+
+                }
+
+
+                refreshSummary(this);
+
+            }
+        );
+
+
+        paidUpInput.addEventListener(
+            'input',
+            () => refreshSummary()
+        );
+
+
+        // =========================================================
+        // أزرار Due Date
+        // =========================================================
+
+        document
+            .querySelectorAll('.due-days-btn')
+            .forEach(btn =>
+
+                btn.addEventListener(
+                    'click',
+                    function () {
+
+                        const billDate =
+                            document.getElementById(
+                                'BillDate'
+                            ).value;
+
+
+                        const d =
+                            billDate
+
+                                ? new Date(
+                                    billDate +
+                                    'T00:00:00Z'
+                                )
+
+                                : new Date();
+
+
+                        d.setUTCDate(
+                            d.getUTCDate() +
+                            parseInt(
+                                this.dataset.days
+                            )
+                        );
+
+
+                        dueDateInput.value =
+                            d.toISOString()
+                             .slice(0, 10);
+
+                    }
+                )
+
+            );
+
+
+        // =========================================================
+        // أول ما الصفحة تفتح
+        // =========================================================
+
+        recalculateAll();
+
+
+        // لو كان فيه خصم إضافي جاي من السيرفر
+
+        if (
+            initialExtraDiscount > 0
+        ) {
+
+            overallSource =
+                'val';
+
+
+            typedVal =
+                round2(
+                    totals.itemsDisc +
+                    initialExtraDiscount
+                );
+
+
+            refreshSummary();
+
         }
 
-        // أزرار سريعة: +7 / +15 / +30 يوم من تاريخ الفاتورة
-        document.querySelectorAll('.due-days-btn').forEach(btn => btn.addEventListener('click', function () {
-            const billDate = document.getElementById('BillDate').value;
-            const d = billDate ? new Date(billDate + 'T00:00:00Z') : new Date();
-            d.setUTCDate(d.getUTCDate() + parseInt(this.dataset.days));
-            dueDateInput.value = d.toISOString().slice(0, 10);
-        }));
 
-        // اليوزر كتب في Percentage -> هي بقت المصدر، Value بتتحدث للعرض بس
-        percentageInput.addEventListener('input', function () {
-            discountTypeInput.value = '1';
-            const billsTotal = currentBillsTotal();
-            const pct = parseFloat(this.value) || 0;
-            valueDiscountInput.value = round2(billsTotal * pct / 100).toFixed(2);
-            recalculateOtherDetails(billsTotal);
-        });
+        // =========================================================
+        // منع Double Submit
+        // + منع Save لو الخصم غلط
+        // =========================================================
 
-        // اليوزر كتب في Value -> هي بقت المصدر، Percentage بتتحدث للعرض بس
-        valueDiscountInput.addEventListener('input', function () {
-            discountTypeInput.value = '0';
-            const billsTotal = currentBillsTotal();
-            const val = parseFloat(this.value) || 0;
-            percentageInput.value = billsTotal > 0 ? (val / billsTotal * 100).toFixed(4) : '0';
-            recalculateOtherDetails(billsTotal);
-        });
+        const billForm =
+            document.getElementById(
+                'billForm'
+            );
 
-        paidUpInput.addEventListener('input', function () {
-            recalculateOtherDetails(currentBillsTotal());
-        });
 
-        // ---------- في حالة رجوع الفورم بعد فشل Validation ----------
-        recalculateAll(); // بيحسب billsTotal وبينادي recalculateOtherDetails بقيم Model الحالية
+        const saveBtn =
+            billForm.querySelector(
+                'button[type=submit]'
+            );
 
-        // نعيد بناء الحقل "التاني" (اللي مش المصدر) بناءً على Model.DiscountType الحالي عشان يبقى متزامن من أول ما الصفحة تفتح
-        (function initSyncOnLoad() {
-            const billsTotal = currentBillsTotal();
-            if (discountTypeInput.value === '0') {
-                const val = parseFloat(valueDiscountInput.value) || 0;
-                percentageInput.value = billsTotal > 0 ? (val / billsTotal * 100).toFixed(4) : '0';
-            } else {
-                const pct = parseFloat(percentageInput.value) || 0;
-                valueDiscountInput.value = round2(billsTotal * pct / 100).toFixed(2);
+
+        billForm.addEventListener(
+            'submit',
+            function (e) {
+
+                // خصومات الأصناف
+
+                if (
+                    document.querySelector(
+                        '#itemsTableBody .discount-input.is-invalid'
+                    )
+                ) {
+
+                    e.preventDefault();
+
+
+                    itemError.textContent =
+                        'Fix the highlighted discounts first (a discount can\'t exceed the item total)';
+
+
+                    return;
+
+                }
+
+
+                // خصم الفاتورة
+
+                if (
+                    percentageInput.classList.contains(
+                        'is-invalid'
+                    ) ||
+
+                    valueDiscountInput.classList.contains(
+                        'is-invalid'
+                    )
+                ) {
+
+                    e.preventDefault();
+
+
+                    itemError.textContent =
+                        discountHint.textContent;
+
+
+                    return;
+
+                }
+
+
+                reindexRows();
+
+
+                saveBtn.disabled = true;
+
             }
-        })();
+        );
 
-        // ---------- منع Double-submit + منع الحفظ لو فيه خصم بيعمل Balance سالب ----------
-        const billForm = document.getElementById('billForm');
-        const saveBtn = billForm.querySelector('button[type=submit]');
-        billForm.addEventListener('submit', function (e) {
-            if (document.querySelector('#itemsTableBody .discount-input.is-invalid')) {
-                e.preventDefault();
-                itemError.textContent = 'Fix the highlighted discounts first (a discount can\'t exceed the item total)';
-                return;
+
+        window.addEventListener(
+            'pageshow',
+            function (e) {
+
+                if (e.persisted)
+                    saveBtn.disabled = false;
+
             }
-            reindexRows();  
-            saveBtn.disabled = true;
-        });
-        window.addEventListener('pageshow', function (e) { if (e.persisted) saveBtn.disabled = false; });
+        );
+
     </script>
 }

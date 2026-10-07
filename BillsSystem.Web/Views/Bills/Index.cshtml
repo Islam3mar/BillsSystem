@@ -125,6 +125,7 @@
                     <td>@bill.TheRest.ToString("0.00")</td>
                     <td class="text-center">
                         <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
                         <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
                               onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
                             @Html.AntiForgeryToken()
@@ -169,6 +170,7 @@
                                         <td>@bill.TheRest.ToString("0.00")</td>
                                         <td class="text-center">
                                             <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                                    <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
                                             <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
                                                   onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
                                                 @Html.AntiForgeryToken()

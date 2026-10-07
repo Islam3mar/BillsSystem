@@ -226,5 +226,11 @@
 
     <div class="form-actions mt-3">
         <a asp-action="Index" class="btn btn-cancel">Back to List</a>
+        <a asp-action="Pdf" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-printer"></i> Print PDF
+        </a>
+        <a asp-action="Pdf" asp-route-id="@Model.Id" asp-route-download="true" class="btn btn-outline-secondary">
+            <i class="bi bi-download"></i> Download
+        </a>
     </div>
 </div>

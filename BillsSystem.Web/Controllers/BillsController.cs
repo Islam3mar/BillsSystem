@@ -20,15 +20,20 @@ namespace BillsSystem.Web.Controllers
         private readonly IItemService _itemService;
         private readonly IReminderService _reminderService;
         private readonly IConfiguration _configuration;
+        private readonly IBillPdfService _pdfService;
+        private readonly IWebHostEnvironment _env;
 
         public BillsController(IBillService billService, IClientService clientService, IItemService itemService,
-            IReminderService reminderService, IConfiguration configuration)
+            IReminderService reminderService, IConfiguration configuration,
+            IBillPdfService pdfService, IWebHostEnvironment env)
         {
             _billService = billService;
             _clientService = clientService;
             _itemService = itemService;
             _reminderService = reminderService;
             _configuration = configuration;
+            _pdfService = pdfService;
+            _env = env;
         }
 
         public async Task<IActionResult> Index(string? search, int page = 1)
@@ -44,6 +49,27 @@ namespace BillsSystem.Web.Controllers
             if (bill == null) return NotFound();
             return View(bill);
         }
+
+
+        // طباعة الفاتورة PDF: بتتفتح في تاب جديد، ومع download=true بتتنزل كملف
+        [HttpGet]
+        public async Task<IActionResult> Pdf(int id, bool download = false)
+        {
+            var bill = await _billService.GetByIdAsync(id);
+            if (bill == null) return NotFound();
+
+            byte[]? logo = null;
+            var logoPath = Path.Combine(_env.WebRootPath, "images", "pioneers-solutions-logo.png");
+            if (System.IO.File.Exists(logoPath))
+                logo = await System.IO.File.ReadAllBytesAsync(logoPath);
+
+            var bytes = _pdfService.Generate(bill, logo);
+
+            return download
+                ? File(bytes, "application/pdf", $"Invoice-{bill.Id}.pdf")
+                : File(bytes, "application/pdf");
+        }
+
 
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Create()
