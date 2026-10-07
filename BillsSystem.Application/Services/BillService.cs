@@ -17,6 +17,9 @@ namespace BillsSystem.Application.Services
 {
     public class BillService : IBillService
     {
+        // true = ممنوع الفاتورة تتحفظ لو الخصم خلّى السعر الفعلي للصنف أقل من سعر الشراء
+        private const bool BlockSaleBelowCostAfterDiscount = true;
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly IValidator<BillInput> _validator;
         private readonly ILogger<BillService> _logger;
@@ -108,16 +111,41 @@ namespace BillsSystem.Application.Services
 
             // ---------- الحسابات كلها هنا وبس، وكل مبلغ بيتقرّب مرة واحدة ----------
             var lines = new List<BillItem>();
-            foreach (var row in input.Items)
+            for (var idx = 0; idx < input.Items.Count; idx++)
             {
+                var row = input.Items[idx];
                 var item = items[row.ItemId];
                 var qty = row.Quantity!.Value;
                 var price = Money.Round(row.SellingPrice);
                 var discount = Math.Round(row.Discount, 2, MidpointRounding.AwayFromZero);
 
+                // (1) ممنوع البيع بأقل من سعر الصنف المسجل (وبالتبعية مش أقل من سعر الشراء)
+                var minPrice = Money.Round(Math.Max(item.SellingPrice, item.BuyingPrice));
+                if (price < minPrice)
+                {
+                    result.ItemRowErrors.Add(new BillItemRowError
+                    {
+                        Index = idx,
+                        SellingPriceError = $"Selling price for '{item.Name}' can't be less than {minPrice:0.00}"
+                    });
+                    return result;
+                }
+
                 var total = Money.Round(price * qty);
                 var discountAmount = Math.Min(total, Money.Round(row.DiscountType == DiscountType.Percentage
                     ? total * discount / 100m : discount));
+
+                // (2) اختياري: ممنوع الخصم يخلّي سعر البيع الفعلي أقل من سعر الشراء
+                //     لو مش عايز الفحص ده، غيّر الثابت BlockSaleBelowCostAfterDiscount لـ false (تحت في أول الكلاس)
+                if (BlockSaleBelowCostAfterDiscount && (total - discountAmount) < Money.Round(item.BuyingPrice * qty))
+                {
+                    result.ItemRowErrors.Add(new BillItemRowError
+                    {
+                        Index = idx,
+                        DiscountError = $"'{item.Name}' would be sold below its cost after this discount"
+                    });
+                    return result;
+                }
 
                 lines.Add(new BillItem
                 {

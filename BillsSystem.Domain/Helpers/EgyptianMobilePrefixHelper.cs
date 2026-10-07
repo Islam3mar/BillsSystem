@@ -43,5 +43,23 @@ namespace BillsSystem.Domain.Helpers
 
         public static string? GetNetworkName(string phoneNumber) =>
             TryParsePrefix(phoneNumber, out var prefix) ? GetNetworkName(prefix) : null;
+
+        // لينك واتساب جاهز من رقم مصري (01xxxxxxxxx → https://wa.me/201xxxxxxxxx)، ومعاه رسالة جاهزة اختيارية
+        public static string? ToWhatsAppUrl(string? phoneNumber, string? message = null)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber)) return null;
+
+            var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
+            if (digits.Length == 0) return null;
+
+            if (digits.StartsWith("00")) digits = digits.Substring(2);          // 0020...
+            else if (digits.StartsWith("0")) digits = "20" + digits.Substring(1); // 01...
+            else if (!digits.StartsWith("20")) digits = "20" + digits;
+
+            var url = "https://wa.me/" + digits;
+            if (!string.IsNullOrWhiteSpace(message))
+                url += "?text=" + Uri.EscapeDataString(message);
+            return url;
+        }
     }
 }

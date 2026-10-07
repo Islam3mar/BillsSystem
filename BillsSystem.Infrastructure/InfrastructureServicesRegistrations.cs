@@ -9,6 +9,7 @@ using BillsSystem.Infrastructure.Data;
 using BillsSystem.Infrastructure.Email;
 using BillsSystem.Infrastructure.Payments;
 using BillsSystem.Infrastructure.Payments;
+using BillsSystem.Infrastructure.Pdf;
 using BillsSystem.Infrastructure.Repositories;
 using BillsSystem.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -51,6 +52,8 @@ namespace BillsSystem.Infrastructure
             services.Configure<ReminderSettings>(configuration.GetSection("Reminders"));
             services.AddScoped<IEmailService, SmtpEmailService>();
             services.AddHostedService<BillReminderBackgroundService>();
+            // طباعة الفواتير PDF
+            services.AddSingleton<IBillPdfService, QuestPdfBillPdfService>();
 
             return services;
         }
