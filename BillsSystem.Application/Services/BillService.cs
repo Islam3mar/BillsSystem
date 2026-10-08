@@ -43,10 +43,10 @@ namespace BillsSystem.Application.Services
             _reminderSettings = reminderSettings.Value;
         }
 
-        public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize)
+        public async Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize, DateTime? from = null, DateTime? to = null)
         {
             page = Math.Max(page, 1);
-            var spec = new BillsPagedSpecification(search, page, pageSize, includeItems: true);
+            var spec = new BillsPagedSpecification(search, page, pageSize, includeItems: true, from: from, to: to);
 
             var total = await _unitOfWork.Bills.CountAsync(spec);
             var items = (await _unitOfWork.Bills.ListAsync(spec)).ToList();

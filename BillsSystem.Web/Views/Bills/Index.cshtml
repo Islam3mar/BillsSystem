@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "Sales Invoices";
     var search = ViewBag.Search as string;
+    var fromDate = ViewBag.From as DateTime?;
+    var toDate = ViewBag.To as DateTime?;
+    var fromText = fromDate?.ToString("yyyy-MM-dd");
+    var toText = toDate?.ToString("yyyy-MM-dd");
 
     // عرض أسماء الأصناف جوه خلية الفاتورة
     void Lines(BillsSystem.Domain.Entities.Bill b)
@@ -68,9 +72,19 @@
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
-<form method="get" asp-action="Index" class="row g-2 mb-3">
+<form method="get" asp-action="Index" class="row g-2 align-items-end mb-3">
     <div class="col-auto">
-        <input name="search" value="@search" class="form-control" placeholder="Bill number or client name" />
+        <label class="form-label small text-muted mb-1">SEARCH</label>
+        <input name="search" value="@search" class="form-control" style="min-width:280px"
+               placeholder="Bill number, client or item name" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label small text-muted mb-1">FROM</label>
+        <input type="date" name="from" value="@fromText" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label small text-muted mb-1">TO</label>
+        <input type="date" name="to" value="@toText" class="form-control" />
     </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-save"><i class="bi bi-search"></i> Search</button>
@@ -115,79 +129,81 @@
                         <td>@bill.Id</td>
                         <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
                         <td>@bill.Client.Name</td>
-                        <td>@{
-                            Lines(bill);
-                        }
-                    </td>
-                    <td>@bill.BillsTotal.ToString("0.00")</td>
-                    <td>@bill.TheNet.ToString("0.00")</td>
-                    <td>@bill.PaidUp.ToString("0.00")</td>
-                    <td>@bill.TheRest.ToString("0.00")</td>
-                    <td class="text-center">
-                        <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                        <td>
+                            @{
+                                Lines(bill);
+                            }
+                        </td>
+                        <td>@bill.BillsTotal.ToString("0.00")</td>
+                        <td>@bill.TheNet.ToString("0.00")</td>
+                        <td>@bill.PaidUp.ToString("0.00")</td>
+                        <td>@bill.TheRest.ToString("0.00")</td>
+                        <td class="text-center">
+                            <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
                             <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
-                        <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                              onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            }
+                            <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
+                                  onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
                 else
-            {
-                var groupId = "bills-grp-" + group[0].Id;
-                <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
-                    role="button" aria-expanded="false" aria-controls="@groupId">
-                    <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices <small class="text-muted">(on this page)</small></td>
-                    <td>@group[0].Client.Name</td>
-                    <td class="text-muted">@group.Sum(b => b.Items.Count) items</td>
-                    <td>@group.Sum(b => b.BillsTotal).ToString("0.00")</td>
-                    <td>@group.Sum(b => b.TheNet).ToString("0.00")</td>
-                    <td>@group.Sum(b => b.PaidUp).ToString("0.00")</td>
-                    <td>@group.Sum(b => b.TheRest).ToString("0.00")</td>
-                    <td class="text-center"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
-                </tr>
-                <tr class="client-group-details">
-                    <td colspan="9">
-                        <div class="collapse" id="@groupId">
-                            <table class="table table-sm mb-0 client-subtable">
-                                @Html.Raw(Cols)
-                                <tbody>
-                                    @foreach (var bill in group)
-                                    {
-                                        <tr>
-                                            <td>@bill.Id</td>
-                                            <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                                            <td>@bill.Client.Name</td>
-                                            <td>@{
-                                                Lines(bill);
-                                            }
-                                        </td>
-                                        <td>@bill.BillsTotal.ToString("0.00")</td>
-                                        <td>@bill.TheNet.ToString("0.00")</td>
-                                        <td>@bill.PaidUp.ToString("0.00")</td>
-                                        <td>@bill.TheRest.ToString("0.00")</td>
-                                        <td class="text-center">
-                                            <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                {
+                    var groupId = "bills-grp-" + group[0].Id;
+                    <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                        role="button" aria-expanded="false" aria-controls="@groupId">
+                        <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices <small class="text-muted">(on this page)</small></td>
+                        <td>@group[0].Client.Name</td>
+                        <td class="text-muted">@group.Sum(b => b.Items.Count) items</td>
+                        <td>@group.Sum(b => b.BillsTotal).ToString("0.00")</td>
+                        <td>@group.Sum(b => b.TheNet).ToString("0.00")</td>
+                        <td>@group.Sum(b => b.PaidUp).ToString("0.00")</td>
+                        <td>@group.Sum(b => b.TheRest).ToString("0.00")</td>
+                        <td class="text-center"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
+                    </tr>
+                    <tr class="client-group-details">
+                        <td colspan="9">
+                            <div class="collapse" id="@groupId">
+                                <table class="table table-sm mb-0 client-subtable">
+                                    @Html.Raw(Cols)
+                                    <tbody>
+                                        @foreach (var bill in group)
+                                        {
+                                            <tr>
+                                                <td>@bill.Id</td>
+                                                <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                                <td>@bill.Client.Name</td>
+                                                <td>
+                                                    @{
+                                                        Lines(bill);
+                                                    }
+                                                </td>
+                                                <td>@bill.BillsTotal.ToString("0.00")</td>
+                                                <td>@bill.TheNet.ToString("0.00")</td>
+                                                <td>@bill.PaidUp.ToString("0.00")</td>
+                                                <td>@bill.TheRest.ToString("0.00")</td>
+                                                <td class="text-center">
+                                                    <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
                                                     <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
-                                            <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                                                  onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </td>
-            </tr>
-        }
-    }
-</tbody>
-</table>
+                                                    <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
+                                                          onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 </div>
 
 @if (Model.TotalPages > 1)
@@ -195,11 +211,11 @@
     <nav class="mt-3">
         <ul class="pagination mb-0">
             <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-page="@(Model.Page - 1)">Previous</a>
+                <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-from="@fromText" asp-route-to="@toText" asp-route-page="@(Model.Page - 1)">Previous</a>
             </li>
             <li class="page-item disabled"><span class="page-link">Page @Model.Page of @Model.TotalPages (@Model.TotalCount invoices)</span></li>
             <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
-                <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-page="@(Model.Page + 1)">Next</a>
+                <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-from="@fromText" asp-route-to="@toText" asp-route-page="@(Model.Page + 1)">Next</a>
             </li>
         </ul>
     </nav>

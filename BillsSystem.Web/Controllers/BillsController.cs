@@ -36,10 +36,12 @@ namespace BillsSystem.Web.Controllers
             _env = env;
         }
 
-        public async Task<IActionResult> Index(string? search, int page = 1)
+        public async Task<IActionResult> Index(string? search, DateTime? from, DateTime? to, int page = 1)
         {
-            var result = await _billService.GetPagedAsync(search, page, PageSize);
+            var result = await _billService.GetPagedAsync(search, page, PageSize, from, to);
             ViewBag.Search = search;
+            ViewBag.From = from;
+            ViewBag.To = to;
             return View(result);
         }
 

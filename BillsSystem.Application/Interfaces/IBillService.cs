@@ -8,7 +8,7 @@ namespace BillsSystem.Application.Interfaces
 {
     public interface IBillService
     {
-        Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize);
+        Task<PagedResult<Bill>> GetPagedAsync(string? search, int page, int pageSize, DateTime? from = null, DateTime? to = null);
         Task<Bill?> GetByIdAsync(int id);
         Task<BillResult> CreateAsync(BillInput input);
         Task<(bool Success, string? Error)> DeleteAsync(int id);        // Soft delete + إرجاع المخزون
