@@ -14,6 +14,8 @@ namespace BillsSystem.Web.Controllers
     public class BillsController : Controller
     {
         private const int PageSize = 20;
+        private static byte[]? _cachedLogo;
+
 
         private readonly IBillService _billService;
         private readonly IClientService _clientService;
@@ -60,16 +62,23 @@ namespace BillsSystem.Web.Controllers
             var bill = await _billService.GetByIdAsync(id);
             if (bill == null) return NotFound();
 
-            byte[]? logo = null;
-            var logoPath = Path.Combine(_env.WebRootPath, "images", "pioneers-solutions-logo.png");
-            if (System.IO.File.Exists(logoPath))
-                logo = await System.IO.File.ReadAllBytesAsync(logoPath);
-
+            var logo = await GetLogoAsync();
             var bytes = _pdfService.Generate(bill, logo);
 
             return download
                 ? File(bytes, "application/pdf", $"Invoice-{bill.Id}.pdf")
                 : File(bytes, "application/pdf");
+        }
+        // اللوجو بيتقرا من الديسك مرة واحدة بس، وبعدها بيتخزن في الذاكرة (لو غيّرته محتاج restart)
+        private async Task<byte[]?> GetLogoAsync()
+        {
+            if (_cachedLogo != null) return _cachedLogo;
+
+            var logoPath = Path.Combine(_env.WebRootPath, "images", "pioneers-solutions-logo.png");
+            if (!System.IO.File.Exists(logoPath)) return null;
+
+            _cachedLogo = await System.IO.File.ReadAllBytesAsync(logoPath);
+            return _cachedLogo;
         }
 
 
