@@ -19,6 +19,10 @@ namespace BillsSystem.Application.Interfaces
 
         Task MarkAllAsReadAsync();
 
+        // حذف نهائي من الداتابيز. ClearAllAsync بيرجّع عدد اللي اتمسح
+        Task DeleteAsync(int id);
+        Task<int> ClearAllAsync();
+
         // بيمسح الإشعارات الأقدم من العدد ده من الأيام (الحد الأدنى 7). بيرجّع عدد اللي اتمسح
         Task<int> PurgeOldAsync(int olderThanDays);
     }

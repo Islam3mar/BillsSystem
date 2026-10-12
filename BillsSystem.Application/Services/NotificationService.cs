@@ -69,6 +69,12 @@ namespace BillsSystem.Application.Services
         public async Task MarkAllAsReadAsync()
             => await _unitOfWork.Notifications.MarkAllAsReadAsync(AppClock.Now);
 
+        public async Task DeleteAsync(int id)
+            => await _unitOfWork.Notifications.DeleteByIdAsync(id);
+
+        public async Task<int> ClearAllAsync()
+            => await _unitOfWork.Notifications.DeleteAllAsync();
+
 
 
         public async Task<int> PurgeOldAsync(int olderThanDays)

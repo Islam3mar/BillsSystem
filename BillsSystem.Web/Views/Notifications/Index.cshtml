@@ -6,8 +6,9 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Notifications @if (unread > 0) {
-        <span class="badge bg-danger ms-1">@unread</span>
+    <h4 class="mb-0">
+        Notifications @if (unread > 0) {
+        <span class="badge bg-danger ms-1" id="notifPageBadge">@unread</span>
     }
 </h4>
 <div class="d-flex gap-2">
@@ -19,6 +20,15 @@
         <button type="button" class="btn btn-sm btn-save" id="notifMarkAllPage">
             <i class="bi bi-check2-all"></i> Mark all as read
         </button>
+    }
+    @if (Model.Items.Any())
+    {
+        <form asp-action="ClearAll" method="post" class="d-inline"
+              onsubmit="return confirmDelete(this, 'Delete ALL notifications permanently? This cannot be undone.')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash3"></i> Clear all
+            </button>
+        </form>
     }
 </div>
 </div>
@@ -34,17 +44,23 @@
     @foreach (var n in Model.Items)
     {
         @* بدون Url الـ href بيتشال تلقائي (Razor بيشيل الـ attribute لو القيمة null) *@
-        <a href="@n.Url" class="notif-item @(n.IsRead ? "" : "unread")" data-notif-id="@n.Id" data-read="@(n.IsRead ? "1" : "0")">
-            <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon"></i></span>
-            <span class="notif-body">
-                <span class="notif-msg">@n.Message</span>
-                <span class="notif-time" title="@n.FullTime">@n.TimeAgo</span>
-            </span>
-            @if (!n.IsRead)
-            {
-                <span class="notif-dot"></span>
-            }
-        </a>
+        <div class="notif-row">
+            <a href="@n.Url" class="notif-item @(n.IsRead ? "" : "unread")" data-notif-id="@n.Id" data-read="@(n.IsRead ? "1" : "0")">
+                <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon"></i></span>
+                <span class="notif-body">
+                    <span class="notif-msg">@n.Message</span>
+                    <span class="notif-time" title="@n.FullTime">@n.TimeAgo</span>
+                </span>
+                @if (!n.IsRead)
+                {
+                    <span class="notif-dot"></span>
+                }
+            </a>
+            <button type="button" class="notif-del" data-notif-delete="@n.Id"
+                    aria-label="Delete notification" title="Delete">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
     }
 </div>
 

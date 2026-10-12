@@ -9,7 +9,8 @@
     var urls = {
         summary: '/Notifications/Summary',
         markRead: '/Notifications/MarkRead/',
-        markAll: '/Notifications/MarkAllRead'
+        markAll: '/Notifications/MarkAllRead',
+        remove: '/Notifications/Delete/'
     };
 
     function token() {
@@ -52,12 +53,14 @@
                 return;
             }
             list.innerHTML = items.map(function (n) {
-                return '<a ' + (n.url ? 'href="' + esc(n.url) + '" ' : '') +
+                return '<div class="notif-row"><a ' + (n.url ? 'href="' + esc(n.url) + '" ' : '') +
                     'class="notif-item' + (n.isRead ? '' : ' unread') + '" data-notif-id="' + n.id + '" data-read="' + (n.isRead ? 1 : 0) + '">' +
                     '<span class="notif-icon tone-' + esc(n.tone) + '"><i class="bi ' + esc(n.icon) + '"></i></span>' +
                     '<span class="notif-body"><span class="notif-msg">' + esc(n.message) + '</span>' +
                     '<span class="notif-time" title="' + esc(n.fullTime) + '">' + esc(n.timeAgo) + '</span></span>' +
-                    (n.isRead ? '' : '<span class="notif-dot"></span>') + '</a>';
+                    (n.isRead ? '' : '<span class="notif-dot"></span>') + '</a>' +
+                    '<button type="button" class="notif-del" data-notif-delete="' + n.id + '" aria-label="Delete notification" title="Delete">' +
+                    '<i class="bi bi-x-lg"></i></button></div>';
             }).join('');
         }
 
@@ -90,6 +93,9 @@
             post(urls.markAll).then(function () { lastUnread = 0; refresh(); });
         });
 
+        // بعد مسح إشعار (من الجرس أو من الصفحة) نحدّث العداد والقائمة
+        document.addEventListener('notif:changed', function () { refresh(); });
+
         // فتح الجرس يحدّث القائمة فورًا
         bell.addEventListener('show.bs.dropdown', refresh);
         // رجوع للتبويب بعد ما كان مخفي
@@ -107,6 +113,58 @@
         item.setAttribute('data-read', '1');
         item.classList.remove('unread');
     });
+
+    /* ---------- مسح إشعار واحد (الجرس + الصفحة الكاملة) ---------- */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-notif-delete]');
+        if (!btn || btn.disabled) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        var row = btn.closest('.notif-row');
+        if (!row) return;
+        var item = row.querySelector('.notif-item');
+        var wasUnread = !!item && item.getAttribute('data-read') !== '1';
+
+        btn.disabled = true;
+        post(urls.remove + btn.getAttribute('data-notif-delete'))
+            .then(function (res) {
+                if (!res.ok || res.redirected) { btn.disabled = false; return; }
+
+                row.classList.add('removing');
+                setTimeout(function () {
+                    var host = row.parentElement;
+                    row.remove();
+                    onPageRowRemoved(host, wasUnread);
+                    document.dispatchEvent(new CustomEvent('notif:changed'));
+                }, 180);
+            })
+            .catch(function () { btn.disabled = false; });
+    });
+
+    // الصفحة الكاملة بس: تحديث عداد الـ unread، ولو الصفحة فضيت نروح للي قبلها
+    function onPageRowRemoved(host, wasUnread) {
+        if (!host || !host.classList.contains('notif-page')) return;
+
+        var pageBadge = document.getElementById('notifPageBadge');
+        if (wasUnread && pageBadge) {
+            var left = Math.max(0, (parseInt(pageBadge.textContent, 10) || 0) - 1);
+            if (left === 0) {
+                pageBadge.remove();
+                var markBtn = document.getElementById('notifMarkAllPage');
+                if (markBtn) markBtn.remove();
+            } else {
+                pageBadge.textContent = left;
+            }
+        }
+
+        if (!host.querySelector('.notif-row')) {
+            var params = new URLSearchParams(location.search);
+            var page = parseInt(params.get('page'), 10) || 1;
+            if (page > 1) params.set('page', page - 1);
+            location.search = params.toString();
+        }
+    }
 
     var markAllPage = document.getElementById('notifMarkAllPage');
     if (markAllPage) {

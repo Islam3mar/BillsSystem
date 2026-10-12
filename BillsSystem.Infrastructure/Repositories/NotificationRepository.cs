@@ -37,6 +37,12 @@ namespace BillsSystem.Infrastructure.Repositories
 
 
         // DELETE واحد في الداتابيز من غير ما نحمّل الصفوف
+        public async Task<int> DeleteByIdAsync(int id) =>
+            await Query.Where(n => n.Id == id).ExecuteDeleteAsync();
+
+        public async Task<int> DeleteAllAsync() =>
+            await Query.ExecuteDeleteAsync();
+
         public async Task<int> DeleteOlderThanAsync(DateTime cutoff) =>
             await Query.Where(n => n.CreatedAt < cutoff).ExecuteDeleteAsync();
 
