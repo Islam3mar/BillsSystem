@@ -13,6 +13,10 @@ namespace BillsSystem.Domain.Interfaces
         Task<int> MarkAsReadAsync(int id, DateTime now);
         Task<int> MarkAllAsReadAsync(DateTime now);
 
+        // حذف نهائي: إشعار واحد / كل الإشعارات
+        Task<int> DeleteByIdAsync(int id);
+        Task<int> DeleteAllAsync();
+
         Task<int> DeleteOlderThanAsync(DateTime cutoff);
     }
 }

@@ -63,5 +63,26 @@ namespace BillsSystem.Web.Controllers
             await _notifications.MarkAllAsReadAsync();
             return Ok();
         }
+
+        // مسح إشعار واحد (بيتنادى بـ fetch من الصفحة والجرس)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _notifications.DeleteAsync(id);
+            return Ok();
+        }
+
+        // مسح كل الإشعارات (قارئها وغير قارئها). Form عادي + Confirm Modal
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearAll()
+        {
+            var removed = await _notifications.ClearAllAsync();
+            TempData["SuccessMessage"] = removed > 0
+                ? $"{removed} notification(s) cleared"
+                : "There were no notifications to clear";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

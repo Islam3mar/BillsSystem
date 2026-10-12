@@ -218,3 +218,72 @@ a.notif-item:hover {
 .notif-page .notif-msg {
     font-size: .95rem;
 }
+
+/* ===== Delete (single notification) ===== */
+.notif-row {
+    position: relative;
+    border-bottom: 1px solid rgba(127,127,127,.12);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+    .notif-row:last-child {
+        border-bottom: 0;
+    }
+
+    .notif-row.removing {
+        opacity: 0;
+        transform: translateX(14px);
+    }
+
+    /* مساحة على اليمين لزرار المسح عشان ميغطيش النقطة أو النص */
+    .notif-row .notif-item {
+        border-bottom: 0;
+        padding-inline-end: 2.9rem;
+    }
+
+.notif-page .notif-row .notif-item {
+    padding-inline-end: 3.4rem;
+}
+
+.notif-del {
+    position: absolute;
+    top: 50%;
+    inset-inline-end: .7rem;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted, #8a8f98);
+    font-size: .8rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s ease, background .12s ease, color .12s ease;
+}
+
+    .notif-row:hover .notif-del,
+    .notif-del:focus-visible {
+        opacity: 1;
+    }
+
+    .notif-del:hover {
+        background: var(--neg-soft, rgba(220,53,69,.12));
+        color: var(--neg, #dc3545);
+    }
+
+    .notif-del:disabled {
+        cursor: default;
+        opacity: .4;
+    }
+
+/* الموبايل / الشاشات اللمس: مفيش hover، فالزرار يفضل ظاهر بشكل خفيف */
+@media (hover: none) {
+    .notif-del {
+        opacity: .7;
+    }
+}
