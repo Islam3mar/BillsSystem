@@ -45,7 +45,7 @@
                     <td class="text-center">
                         <a asp-action="Edit" asp-route-id="@category.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <form asp-action="Delete" asp-route-id="@category.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('Are you sure you want to delete this category?');">
+                              onsubmit="return confirmDelete(this, 'Are you sure you want to delete this category?');">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
