@@ -33,6 +33,18 @@ namespace BillsSystem.Application.Services
         public async Task<IEnumerable<Item>> GetAllAsync()
             => await _unitOfWork.Items.GetAllAsync();
 
+        public async Task<PagedResult<Item>> GetPagedAsync(string? search, int page, int pageSize)
+        {
+            page = Math.Max(page, 1);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var spec = new ItemsPagedSpecification(search, page, pageSize);
+
+            var total = await _unitOfWork.Items.CountAsync(spec);
+            var items = (await _unitOfWork.Items.ListAsync(spec)).ToList();
+
+            return new PagedResult<Item> { Items = items, Page = page, PageSize = pageSize, TotalCount = total };
+        }
+
         public async Task<Item?> GetByIdAsync(int id)
             => await _unitOfWork.Items.GetByIdAsync(id);
 

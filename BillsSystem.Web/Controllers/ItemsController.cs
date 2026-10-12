@@ -29,10 +29,18 @@ namespace BillsSystem.Web.Controllers
             _unitService = unitService;
         }
 
-        public async Task<IActionResult> Index()
+        private const int PageSize = 20;
+
+        public async Task<IActionResult> Index(string? search, int page = 1)
         {
-            var items = await _itemService.GetAllAsync();
-            return View(items);
+            var result = await _itemService.GetPagedAsync(search, page, PageSize);
+
+            // الصفحة فضيت (مثلًا بعد حذف آخر صف فيها) → نروح لآخر صفحة موجودة
+            if (result.Items.Count == 0 && result.TotalCount > 0 && result.Page > 1)
+                return RedirectToAction(nameof(Index), new { search, page = result.TotalPages });
+
+            ViewBag.Search = search;
+            return View(result);
         }
 
         public async Task<IActionResult> Create()
@@ -146,12 +154,12 @@ namespace BillsSystem.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, string? search = null, int page = 1)
         {
             var (success, error) = await _itemService.DeleteAsync(id);
             TempData["SuccessMessage"] = success ? "Item deleted successfully" : null;
             TempData["ErrorMessage"] = success ? null : error;
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { search, page });   // يفضل في نفس الصفحة والبحث
         }
 
         private async Task PopulateCompaniesAsync(int? selectedId = null)
