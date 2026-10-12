@@ -9,6 +9,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Bills System</title>
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <script src="~/js/sidebar.js" asp-append-version="true"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,10 +25,20 @@
     <div class="app-shell">
         <header class="topbar">
             <div class="topbar-left">
-                <img src="~/images/pioneers-solutions-logo.png" alt="Pioneers" class="topbar-logo" />
-                <span class="topbar-brand">Bills System</span>
+                <button type="button" class="sidebar-toggle" data-sidebar-toggle
+                        aria-label="Toggle sidebar" title="Toggle sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <a asp-controller="Home" asp-action="Index" class="topbar-home" title="Home">
+                    <img src="~/images/pioneers-solutions-logo.png" alt="Pioneers" class="topbar-logo" />
+                    <span class="topbar-brand">Bills System</span>
+                </a>
             </div>
             <div class="topbar-right">
+                <button type="button" class="notif-btn theme-toggle" data-theme-toggle
+                        aria-label="Toggle dark mode" title="Dark / Light">
+                    <i class="bi bi-moon-stars"></i><i class="bi bi-sun"></i>
+                </button>
                 <div class="dropdown notif-bell" id="notifBell">
                     <button type="button" class="notif-btn" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                             aria-expanded="false" aria-label="Notifications">
@@ -65,38 +77,38 @@
         <div class="app-body">
             <aside class="sidebar">
                 <nav class="sidebar-nav">
-                    <a class="sidebar-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
-                        <i class="bi bi-house-door"></i> Home Page
+                    <a class="sidebar-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index" data-label="Home Page">
+                        <i class="bi bi-house-door"></i><span class="sidebar-label">Home Page</span>
                     </a>
 
                     <div class="sidebar-section">Catalog</div>
-                    <a class="sidebar-link @(currentController == "Companies" ? "active" : "")" asp-controller="Companies" asp-action="Index">
-                        <i class="bi bi-building"></i> Company Data
+                    <a class="sidebar-link @(currentController == "Companies" ? "active" : "")" asp-controller="Companies" asp-action="Index" data-label="Company Data">
+                        <i class="bi bi-building"></i><span class="sidebar-label">Company Data</span>
                     </a>
-                    <a class="sidebar-link @(currentController == "Units" ? "active" : "")" asp-controller="Units" asp-action="Index">
-                        <i class="bi bi-rulers"></i> All Units
+                    <a class="sidebar-link @(currentController == "Units" ? "active" : "")" asp-controller="Units" asp-action="Index" data-label="All Units">
+                        <i class="bi bi-rulers"></i><span class="sidebar-label">All Units</span>
                     </a>
-                    <a class="sidebar-link @(currentController == "Items" ? "active" : "")" asp-controller="Items" asp-action="Index">
-                        <i class="bi bi-box-seam"></i> Items
+                    <a class="sidebar-link @(currentController == "Items" ? "active" : "")" asp-controller="Items" asp-action="Index" data-label="Items">
+                        <i class="bi bi-box-seam"></i><span class="sidebar-label">Items</span>
                     </a>
-                    <a class="sidebar-link @(currentController == "Types" ? "active" : "")" asp-controller="Types" asp-action="Index">
-                        <i class="bi bi-tags"></i> Types
+                    <a class="sidebar-link @(currentController == "Types" ? "active" : "")" asp-controller="Types" asp-action="Index" data-label="Types">
+                        <i class="bi bi-tags"></i><span class="sidebar-label">Types</span>
                     </a>
-                    <a class="sidebar-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index">
-                        <i class="bi bi-folder2"></i> Categories
+                    <a class="sidebar-link @(currentController == "Categories" ? "active" : "")" asp-controller="Categories" asp-action="Index" data-label="Categories">
+                        <i class="bi bi-folder2"></i><span class="sidebar-label">Categories</span>
                     </a>
 
                     <div class="sidebar-section">Sales</div>
-                    <a class="sidebar-link @(currentController == "Clients" ? "active" : "")" asp-controller="Clients" asp-action="Index">
-                        <i class="bi bi-people"></i> Clients
+                    <a class="sidebar-link @(currentController == "Clients" ? "active" : "")" asp-controller="Clients" asp-action="Index" data-label="Clients">
+                        <i class="bi bi-people"></i><span class="sidebar-label">Clients</span>
                     </a>
-                    <a class="sidebar-link @(currentController == "Bills" ? "active" : "")" asp-controller="Bills" asp-action="Index">
-                        <i class="bi bi-receipt"></i> Sales Invoice
+                    <a class="sidebar-link @(currentController == "Bills" ? "active" : "")" asp-controller="Bills" asp-action="Index" data-label="Sales Invoice">
+                        <i class="bi bi-receipt"></i><span class="sidebar-label">Sales Invoice</span>
                     </a>
 
                     <div class="sidebar-section">Reports</div>
-                    <a class="sidebar-link @(currentController == "SalesReport" ? "active" : "")" asp-controller="SalesReport" asp-action="Index">
-                        <i class="bi bi-bar-chart-line"></i> Sales Report
+                    <a class="sidebar-link @(currentController == "SalesReport" ? "active" : "")" asp-controller="SalesReport" asp-action="Index" data-label="Sales Report">
+                        <i class="bi bi-bar-chart-line"></i><span class="sidebar-label">Sales Report</span>
                     </a>
                 </nav>
             </aside>

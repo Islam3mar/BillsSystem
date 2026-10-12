@@ -41,12 +41,34 @@
             @foreach (var client in Model)
             {
                 var whatsAppUrl = EgyptianMobilePrefixHelper.ToWhatsAppUrl(client.Phone);
+                var hasEmail = !string.IsNullOrWhiteSpace(client.Email);
+                var gmailUrl = hasEmail
+                    ? "https://mail.google.com/mail/?view=cm&fs=1&to=" + Uri.EscapeDataString(client.Email!.Trim())
+                    : null;
+                var networkClass = client.Network switch
+                {
+                    "Vodafone" => "net-vodafone",
+                    "Etisalat" => "net-etisalat",
+                    "Orange" => "net-orange",
+                    "WE" => "net-we",
+                    _ => "bg-secondary"
+                };
                 <tr>
                     <td>@client.Id</td>
                     <td>@client.Name</td>
                     <td>@client.Phone</td>
-                    <td>@(string.IsNullOrWhiteSpace(client.Email) ? "-" : client.Email)</td>
-                    <td><span class="badge bg-secondary">@client.Network</span></td>
+                    <td>
+                        @if (hasEmail)
+                        {
+                            <a href="@gmailUrl" target="_blank" rel="noopener noreferrer"
+                               title="Compose email in Gmail">@client.Email</a>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </td>
+                    <td><span class="badge @networkClass">@client.Network</span></td>
                     <td>@client.Address</td>
                     <td>@(client.MaxCreditLimit.HasValue ? client.MaxCreditLimit.Value.ToString("N2") : "No limit")</td>
                     <td class="text-center">
