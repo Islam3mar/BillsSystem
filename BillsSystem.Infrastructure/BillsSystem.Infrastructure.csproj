@@ -24,6 +24,7 @@
     </PackageReference>
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Stripe.net" Version="53.0.0" />
+	  <EmbeddedResource Include="Pdf\Fonts\*.ttf" />
   </ItemGroup>
 
   <ItemGroup>
