@@ -9,6 +9,9 @@ namespace BillsSystem.Application.Interfaces
     public interface IItemService
     {
         Task<IEnumerable<Item>> GetAllAsync();
+
+        // صفحة واحدة من النتايج (مع بحث اختياري) للجدول الرئيسي. GetAllAsync لسه موجودة للـ Dropdowns
+        Task<PagedResult<Item>> GetPagedAsync(string? search, int page, int pageSize);
         Task<Item?> GetByIdAsync(int id);
         Task<ItemResult> CreateAsync(ItemInput input);
         Task<ItemResult> UpdateAsync(int id, ItemInput input);
