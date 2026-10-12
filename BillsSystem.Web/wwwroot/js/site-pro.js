@@ -34,13 +34,22 @@ function showToast(type, message) {
 // الاستخدام في أي form حذف:
 // <form asp-action="Delete" asp-route-id="@item.Id" method="post"
 //       onsubmit="return confirmDelete(this, 'Delete this client permanently?')">
-function confirmDelete(form, message) {
+// وللعمليات اللي مش حذف (اختياري): { title, okText, danger }
+//       onsubmit="return confirmDelete(this, 'Send it now?', { title: 'Send reminder?', okText: 'Yes, Send', danger: false })"
+function confirmDelete(form, message, opts) {
     const modalEl = document.getElementById('confirmModal');
     if (!modalEl || !window.bootstrap) return confirm(message); // fallback
 
+    opts = opts || {};
     document.getElementById('confirmModalBody').textContent = message || 'This action cannot be undone.';
+    const titleEl = document.getElementById('confirmModalTitle');
+    if (titleEl) titleEl.textContent = opts.title || 'Are you sure?';
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     const okBtn = document.getElementById('confirmModalOkBtn');
+    okBtn.textContent = opts.okText || 'Yes, Delete';
+    const danger = opts.danger !== false;              // الافتراضي: زرار أحمر (حذف)
+    okBtn.classList.toggle('btn-cancel', danger);
+    okBtn.classList.toggle('btn-save', !danger);
 
     const onConfirm = () => {
         cleanup();
