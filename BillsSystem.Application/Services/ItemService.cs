@@ -7,6 +7,7 @@ using BillsSystem.Domain.Common;
 using BillsSystem.Domain.Entities;
 using BillsSystem.Domain.Enums;
 using BillsSystem.Domain.Interfaces;
+using BillsSystem.Domain.Specifications;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
