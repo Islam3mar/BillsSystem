@@ -6,11 +6,18 @@ using BillsSystem.Domain.Common;
 using BillsSystem.Infrastructure;
 using BillsSystem.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// حفظ مفاتيح الـ DataProtection في فولدر على الاستضافة، عشان كوكي اللوجن والـ AntiForgery
+// يفضلوا شغالين بعد أي Recycle للـ App Pool (من غيره المفاتيح بتتمسح وكل لوجن بيرجعك لصفحة اللوجن)
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+    .SetApplicationName("BillsSystem");
 
 builder.Services.AddControllersWithViews(options =>
 {
