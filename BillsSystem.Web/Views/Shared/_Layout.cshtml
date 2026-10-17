@@ -60,7 +60,7 @@
                 <div class="dropdown topbar-user">
                     <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <span class="topbar-username d-none d-md-inline">@User.Identity?.Name</span>
-                        <i class="bi bi-person-circle"></i>
+                        <span class="topbar-avatar"><img src="~/images/avatar.jpeg" alt="" onerror="this.parentNode.classList.add('no-photo')" /><i class="bi bi-person-fill"></i></span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><span class="dropdown-item-text">@User.Identity?.Name</span></li>
