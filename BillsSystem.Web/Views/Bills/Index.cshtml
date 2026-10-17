@@ -15,7 +15,34 @@
             <div class="bill-line"><span class="bill-line-name">@l.ItemName</span> <span class="bill-line-qty">&times; @l.Quantity</span></div>
         }
     }
-    const string Cols = "<colgroup><col style=\"width:6%\"><col style=\"width:9%\"><col style=\"width:14%\"><col style=\"width:22%\"><col style=\"width:9%\"><col style=\"width:9%\"><col style=\"width:9%\"><col style=\"width:9%\"><col style=\"width:13%\"></colgroup>";
+    const string Cols = "<colgroup><col style=\"width:6%\"><col style=\"width:9%\"><col style=\"width:15%\"><col style=\"width:20%\"><col style=\"width:10%\"><col style=\"width:10%\"><col style=\"width:10%\"><col style=\"width:12%\"><col style=\"width:124px\"></colgroup>";
+
+    // خلية "المتبقي": الرقم الأحمر لو لسه عليه فلوس، وعلامة "Paid" لو اتسدد
+    void RestCell(decimal rest)
+    {
+        if (rest > 0)
+        {
+            <span class="rest-due">@rest.ToString("0.00")</span>
+        }
+        else
+        {
+            <span class="status-paid"><i class="bi bi-check-circle-fill"></i> Paid</span>
+        }
+    }
+
+    // أزرار الصف: أيقونات صغيرة بدل 3 أزرار كبيرة
+    async Task RowActions(BillsSystem.Domain.Entities.Bill b)
+    {
+        <div class="row-actions">
+            <a href="@Url.Action("Details", new { id = b.Id })" class="icon-btn icon-btn-view" title="View invoice" aria-label="View invoice"><i class="bi bi-eye"></i></a>
+            <a href="@Url.Action("Pdf", new { id = b.Id })" target="_blank" class="icon-btn icon-btn-print" title="Print PDF" aria-label="Print PDF"><i class="bi bi-printer"></i></a>
+            <form action="@Url.Action("Delete", new { id = b.Id })" method="post" class="d-inline"
+                  onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="icon-btn icon-btn-danger" title="Delete invoice" aria-label="Delete invoice"><i class="bi bi-trash3"></i></button>
+            </form>
+        </div>
+    }
 }
 
 <style>
@@ -24,42 +51,24 @@
         width: 100%;
     }
 
-        .bills-table td, .client-subtable td {
-            vertical-align: top;
-        }
+    .bills-wrap {
+        overflow-x: auto;
+    }
 
-        .bills-table th {
-            white-space: normal !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
-            vertical-align: bottom;
-        }
-
-        .bills-table .btn {
-            white-space: nowrap;
+        .bills-wrap .bills-table {
+            min-width: 1020px;
         }
 
     .client-group-details > td {
         padding: 0 !important;
     }
-
-    .bill-line {
-        line-height: 1.5;
-    }
-
-    .bill-line-name {
-        font-weight: 500;
-    }
-
-    .bill-line-qty {
-        color: var(--muted);
-        font-size: .85em;
-        white-space: nowrap;
-    }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">Sales Invoices</h4>
+<div class="page-head">
+    <div>
+        <h4>Sales Invoices</h4>
+        <p>@Model.TotalCount @(Model.TotalCount == 1 ? "invoice" : "invoices") in total</p>
+    </div>
     <a asp-action="Create" class="btn btn-save"><i class="bi bi-plus-lg"></i> New Invoice</a>
 </div>
 
@@ -72,40 +81,40 @@
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
-<form method="get" asp-action="Index" class="row g-2 align-items-end mb-3">
-    <div class="col-auto">
+<form method="get" asp-action="Index" class="filter-bar">
+    <div class="filter-search">
         <label class="form-label small text-muted mb-1">SEARCH</label>
-        <input name="search" value="@search" class="form-control" style="min-width:280px"
+        <input name="search" value="@search" class="form-control"
                placeholder="Bill number, client or item name" />
     </div>
-    <div class="col-auto">
+    <div>
         <label class="form-label small text-muted mb-1">FROM</label>
         <input type="date" name="from" value="@fromText" class="form-control" />
     </div>
-    <div class="col-auto">
+    <div>
         <label class="form-label small text-muted mb-1">TO</label>
         <input type="date" name="to" value="@toText" class="form-control" />
     </div>
-    <div class="col-auto">
+    <div class="filter-actions">
         <button type="submit" class="btn btn-save"><i class="bi bi-search"></i> Search</button>
         <a asp-action="Index" class="btn btn-cancel">Reset</a>
     </div>
 </form>
 
-<div class="list-card">
-    <table class="table table-bordered mb-0 bills-table">
+<div class="list-card bills-wrap">
+    <table class="table mb-0 bills-table">
         @Html.Raw(Cols)
         <thead>
             <tr>
-                <th>Bill Number</th>
-                <th>Bill Date</th>
+                <th>Bill #</th>
+                <th>Date</th>
                 <th>Client</th>
                 <th>Items</th>
-                <th>Bills Total</th>
-                <th>The Net</th>
-                <th>Paid Up</th>
-                <th>The Rest</th>
-                <th class="text-center">Actions</th>
+                <th class="num">Total</th>
+                <th class="num" title="Total after discounts">Net</th>
+                <th class="num">Paid</th>
+                <th class="num">Remaining</th>
+                <th></th>
             </tr>
         </thead>
         @{
@@ -118,7 +127,7 @@
         <tbody>
             @if (!Model.Items.Any())
             {
-                <tr><td colspan="9" class="text-center text-muted py-4">No invoices found</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-5">No invoices found</td></tr>
             }
             @foreach (var group in billGroups)
             {
@@ -126,84 +135,88 @@
                 {
                     var bill = group[0];
                     <tr>
-                        <td>@bill.Id</td>
-                        <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                        <td>@bill.Client.Name</td>
+                        <td class="bill-no">#@bill.Id</td>
+                        <td class="bill-date">@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                        <td class="bill-client">@bill.Client.Name</td>
                         <td>
                             @{
                                 Lines(bill);
                             }
                         </td>
-                        <td>@bill.BillsTotal.ToString("0.00")</td>
-                        <td>@bill.TheNet.ToString("0.00")</td>
-                        <td>@bill.PaidUp.ToString("0.00")</td>
-                        <td>@bill.TheRest.ToString("0.00")</td>
-                        <td class="text-center">
-                            <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                            <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
-                            <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                                  onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
+                        <td class="num">@bill.BillsTotal.ToString("0.00")</td>
+                        <td class="num">@bill.TheNet.ToString("0.00")</td>
+                        <td class="num">@bill.PaidUp.ToString("0.00")</td>
+                        <td class="num">@{
+                            RestCell(bill.TheRest);
+                        }
+                    </td>
+                    <td>@{
+                        await RowActions(bill);
+                    }
+                </td>
+            </tr>
+        }
                 else
-                {
-                    var groupId = "bills-grp-" + group[0].Id;
-                    <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
-                        role="button" aria-expanded="false" aria-controls="@groupId">
-                        <td colspan="2"><i class="bi bi-chevron-right group-arrow"></i>@group.Count invoices <small class="text-muted">(on this page)</small></td>
-                        <td>@group[0].Client.Name</td>
-                        <td class="text-muted">@group.Sum(b => b.Items.Count) items</td>
-                        <td>@group.Sum(b => b.BillsTotal).ToString("0.00")</td>
-                        <td>@group.Sum(b => b.TheNet).ToString("0.00")</td>
-                        <td>@group.Sum(b => b.PaidUp).ToString("0.00")</td>
-                        <td>@group.Sum(b => b.TheRest).ToString("0.00")</td>
-                        <td class="text-center"><span class="btn btn-sm btn-outline-secondary">View all</span></td>
-                    </tr>
-                    <tr class="client-group-details">
-                        <td colspan="9">
-                            <div class="collapse" id="@groupId">
-                                <table class="table table-sm mb-0 client-subtable">
-                                    @Html.Raw(Cols)
-                                    <tbody>
-                                        @foreach (var bill in group)
-                                        {
-                                            <tr>
-                                                <td>@bill.Id</td>
-                                                <td>@bill.BillDate.ToString("yyyy/MM/dd")</td>
-                                                <td>@bill.Client.Name</td>
-                                                <td>
-                                                    @{
-                                                        Lines(bill);
-                                                    }
-                                                </td>
-                                                <td>@bill.BillsTotal.ToString("0.00")</td>
-                                                <td>@bill.TheNet.ToString("0.00")</td>
-                                                <td>@bill.PaidUp.ToString("0.00")</td>
-                                                <td>@bill.TheRest.ToString("0.00")</td>
-                                                <td class="text-center">
-                                                    <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                                                    <a asp-action="Pdf" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print PDF"><i class="bi bi-printer"></i></a>
-                                                    <form asp-action="Delete" asp-route-id="@bill.Id" method="post" class="d-inline"
-                                                          onsubmit="return confirmDelete(this, 'Delete this invoice? It will be hidden from reports and its stock will be returned.');">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                                    </form>
-                                                </td>
-                                            </tr>
+        {
+            var groupId = "bills-grp-" + group[0].Id;
+            <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                role="button" aria-expanded="false" aria-controls="@groupId">
+                <td colspan="3">
+                    <div class="group-title">
+                        <i class="bi bi-chevron-right group-arrow"></i>
+                        <span class="group-name">@group[0].Client.Name</span>
+                        <span class="group-count" title="Invoices on this page">@group.Count invoices</span>
+                    </div>
+                </td>
+                <td class="text-muted">@group.Sum(b => b.Items.Count) items</td>
+                <td class="num">@group.Sum(b => b.BillsTotal).ToString("0.00")</td>
+                <td class="num">@group.Sum(b => b.TheNet).ToString("0.00")</td>
+                <td class="num">@group.Sum(b => b.PaidUp).ToString("0.00")</td>
+                <td class="num">@{
+                    RestCell(group.Sum(b => b.TheRest));
+                }
+            </td>
+            <td><div class="row-actions"><span class="group-toggle">Details <i class="bi bi-chevron-down"></i></span></div></td>
+        </tr>
+        <tr class="client-group-details">
+            <td colspan="9">
+                <div class="collapse" id="@groupId">
+                    <table class="table table-sm mb-0 client-subtable">
+                        @Html.Raw(Cols)
+                        <tbody>
+                            @foreach (var bill in group)
+                            {
+                                <tr>
+                                    <td class="bill-no">#@bill.Id</td>
+                                    <td class="bill-date">@bill.BillDate.ToString("yyyy/MM/dd")</td>
+                                    <td class="bill-client">@bill.Client.Name</td>
+                                    <td>
+                                        @{
+                                            Lines(bill);
                                         }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
+                                    </td>
+                                    <td class="num">@bill.BillsTotal.ToString("0.00")</td>
+                                    <td class="num">@bill.TheNet.ToString("0.00")</td>
+                                    <td class="num">@bill.PaidUp.ToString("0.00")</td>
+                                    <td class="num">@{
+                                        RestCell(bill.TheRest);
+                                    }
+                                </td>
+                                <td>@{
+                                    await RowActions(bill);
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </td>
+</tr>
                 }
             }
-        </tbody>
-    </table>
+</tbody>
+</table>
 </div>
 
 @if (Model.TotalPages > 1)

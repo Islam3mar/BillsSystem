@@ -5,7 +5,7 @@
 
 <div class="form-card">
     <h4>Types Form</h4>
-    <p class="form-subtitle">This is the basic horizontal form with labels on left and cost estimation form is the default position.</p>
+    <p class="form-subtitle">Add an item type under a company.</p>
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -41,8 +41,8 @@
             </div>
         </div>
         <div class="form-actions">
-            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
-            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-x-lg"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-check-lg"></i> Save</button>
         </div>
     </form>
 </div>

@@ -5,7 +5,7 @@
 
 <div class="form-card">
     <h4>Clients</h4>
-    <p class="form-subtitle">This is the basic horizontal form with labels on left and cost estimation form is the default position.</p>
+    <p class="form-subtitle">Add a client to start billing them.</p>
 
     <form asp-action="Create" method="post">
         @Html.AntiForgeryToken()
@@ -62,8 +62,8 @@
         </div>
 
         <div class="form-actions">
-            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-trash"></i> Cancel</a>
-            <button type="submit" class="btn btn-save"><i class="bi bi-pencil-square"></i> Save</button>
+            <a asp-action="Index" class="btn btn-cancel"><i class="bi bi-x-lg"></i> Cancel</a>
+            <button type="submit" class="btn btn-save"><i class="bi bi-check-lg"></i> Save</button>
         </div>
     </form>
 </div>

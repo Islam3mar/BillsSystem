@@ -3,39 +3,36 @@
     ViewData["Title"] = "Home Page";
 }
 
-<h4 class="mb-3">Overview</h4>
+<div class="page-head">
+    <div>
+        <h4>Overview</h4>
+        <p>@BillsSystem.Domain.Common.AppClock.Today.ToString("dddd, d MMMM yyyy")</p>
+    </div>
+    <a asp-controller="Bills" asp-action="Create" class="btn btn-save"><i class="bi bi-plus-lg"></i> New Invoice</a>
+</div>
 
 <!-- ===== KPI Cards ===== -->
 <div class="row g-3">
-    <div class="col-md-3">
-        <div class="kpi-card">
-            <div class="kpi-icon kpi-blue"><i class="bi bi-receipt"></i></div>
-            <div>
-                <div class="kpi-label">Bills This Month</div>
-                <div class="kpi-value">@Model.MonthBillsCount</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="kpi-card">
-            <div class="kpi-icon kpi-green"><i class="bi bi-graph-up-arrow"></i></div>
+    <div class="col-lg-6">
+        <div class="kpi-card kpi-hero">
             <div>
                 <div class="kpi-label">Net Sales This Month</div>
-                <div class="kpi-value">@Model.MonthNetSales.ToString("0.00")</div>
+                <div class="kpi-value">@Model.MonthNetSales.ToString("N2")</div>
             </div>
+            <div class="kpi-meta"><strong>@Model.MonthBillsCount</strong> @(Model.MonthBillsCount == 1 ? "invoice" : "invoices") issued this month</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="kpi-card">
-            <div class="kpi-icon kpi-amber"><i class="bi bi-exclamation-circle"></i></div>
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card h-100">
+            <div class="kpi-icon kpi-amber"><i class="bi bi-hourglass-split"></i></div>
             <div>
-                <div class="kpi-label">Outstanding (All Time)</div>
-                <div class="kpi-value">@Model.OutstandingAllTime.ToString("0.00")</div>
+                <div class="kpi-label">Outstanding</div>
+                <div class="kpi-value">@Model.OutstandingAllTime.ToString("N2")</div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="kpi-card">
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card h-100">
             <div class="kpi-icon kpi-violet"><i class="bi bi-people"></i></div>
             <div>
                 <div class="kpi-label">Total Clients</div>
@@ -47,22 +44,22 @@
 
 <!-- ===== Quick Actions ===== -->
 <div class="row g-3 mt-1">
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <a asp-controller="Bills" asp-action="Create" class="quick-action">
             <i class="bi bi-plus-circle"></i> New Invoice
         </a>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <a asp-controller="Clients" asp-action="Create" class="quick-action">
             <i class="bi bi-person-plus"></i> New Client
         </a>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <a asp-controller="Items" asp-action="Create" class="quick-action">
             <i class="bi bi-box-seam"></i> New Item
         </a>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <a asp-controller="SalesReport" asp-action="Index" class="quick-action">
             <i class="bi bi-bar-chart"></i> Sales Report
         </a>
@@ -71,10 +68,13 @@
 
 <!-- ===== Recent Bills ===== -->
 <div class="list-card mt-4">
-    <h6 class="mb-3">Recent Invoices</h6>
+    <div class="card-head">
+        <h6>Recent Invoices</h6>
+        <a asp-controller="Bills" asp-action="Index">View all</a>
+    </div>
     @if (!Model.RecentBills.Any())
     {
-        <p class="text-muted mb-0">No invoices yet — create your first one from Quick Actions above.</p>
+        <p class="text-muted mb-0 pt-1">No invoices yet — create your first one from Quick Actions above.</p>
     }
     else
     {

@@ -428,13 +428,13 @@
 
             <a asp-action="Index"
                class="btn btn-cancel">
-                <i class="bi bi-trash"></i> Cancel
+                <i class="bi bi-x-lg"></i> Cancel
             </a>
 
             <button type="submit"
                     class="btn btn-save">
 
-                <i class="bi bi-pencil-square"></i> Save
+                <i class="bi bi-check-lg"></i> Save
 
             </button>
 
@@ -511,7 +511,7 @@
 
 
         const MAX_PRICE = 10000000,
-              MAX_QTY = 1000000;
+            MAX_QTY = 1000000;
 
 
         const round2 =
@@ -672,7 +672,7 @@
 
         itemSelect.addEventListener(
             'change',
-            function () {
+            function() {
 
                 itemError.textContent = '';
 
@@ -702,66 +702,66 @@
                     requestedId
                 )
 
-                .then(res => res.json())
+                    .then(res => res.json())
 
-                .then(data => {
+                    .then(data => {
 
-                    if (
-                        !data ||
-                        itemSelect.value !== requestedId
-                    ) {
+                        if (
+                            !data ||
+                            itemSelect.value !== requestedId
+                        ) {
 
-                        return;
+                            return;
 
-                    }
-
-
-                    // =================================================
-                    // لو الصنف موجود في الجدول
-                    // نكمل بنفس السعر عشان الدمج
-                    // =================================================
-
-                    const existing =
-                        findRow(requestedId);
+                        }
 
 
-                    sellingPriceInput.value =
-                        existing
-                            ? rowPrice(existing)
-                            : data.sellingPrice;
+                        // =================================================
+                        // لو الصنف موجود في الجدول
+                        // نكمل بنفس السعر عشان الدمج
+                        // =================================================
+
+                        const existing =
+                            findRow(requestedId);
 
 
-                    sellingPriceInput.dataset.unitName =
-                        data.unitName;
-
-                    sellingPriceInput.dataset.itemName =
-                        data.itemName;
-
-                    sellingPriceInput.dataset.stock =
-                        data.stock;
+                        sellingPriceInput.value =
+                            existing
+                                ? rowPrice(existing)
+                                : data.sellingPrice;
 
 
-                    // أقل سعر مسموح
-                    sellingPriceInput.dataset.minPrice =
-                        data.sellingPrice;
+                        sellingPriceInput.dataset.unitName =
+                            data.unitName;
+
+                        sellingPriceInput.dataset.itemName =
+                            data.itemName;
+
+                        sellingPriceInput.dataset.stock =
+                            data.stock;
 
 
-                    sellingPriceInput.min =
-                        data.sellingPrice;
+                        // أقل سعر مسموح
+                        sellingPriceInput.dataset.minPrice =
+                            data.sellingPrice;
 
 
-                    minPriceHint.textContent =
-                        'Minimum price: ' +
-                        Number(
-                            data.sellingPrice
-                        ).toFixed(2);
+                        sellingPriceInput.min =
+                            data.sellingPrice;
 
 
-                    refreshStockHint();
+                        minPriceHint.textContent =
+                            'Minimum price: ' +
+                            Number(
+                                data.sellingPrice
+                            ).toFixed(2);
 
-                    updateTotalPreview();
 
-                });
+                        refreshStockHint();
+
+                        updateTotalPreview();
+
+                    });
 
             }
         );
@@ -806,7 +806,7 @@
             'addItemBtn'
         ).addEventListener(
             'click',
-            function () {
+            function() {
 
                 itemError.textContent = '';
 
@@ -1071,84 +1071,84 @@
 
                     row.innerHTML = `
 
-                        <td>
-                            ${itemId}
-                            <input type="hidden"
-                                   name="Items[${index}].ItemId"
-                                   value="${itemId}" />
-                        </td>
+                                <td>
+                                    ${itemId}
+                                    <input type="hidden"
+                                           name="Items[${index}].ItemId"
+                                           value="${itemId}" />
+                                </td>
 
-                        <td>
-                            ${esc(itemName)}
-                        </td>
+                                <td>
+                                    ${esc(itemName)}
+                                </td>
 
-                        <td>
-                            ${esc(unitName)}
-                        </td>
+                                <td>
+                                    ${esc(unitName)}
+                                </td>
 
-                        <td>
-                            <span class="row-qty">
-                                ${qty}
-                            </span>
+                                <td>
+                                    <span class="row-qty">
+                                        ${qty}
+                                    </span>
 
-                            <input type="hidden"
-                                   name="Items[${index}].Quantity"
-                                   value="${qty}" />
-                        </td>
+                                    <input type="hidden"
+                                           name="Items[${index}].Quantity"
+                                           value="${qty}" />
+                                </td>
 
-                        <td>
-                            ${price.toFixed(2)}
+                                <td>
+                                    ${price.toFixed(2)}
 
-                            <input type="hidden"
-                                   name="Items[${index}].SellingPrice"
-                                   value="${price}" />
-                        </td>
+                                    <input type="hidden"
+                                           name="Items[${index}].SellingPrice"
+                                           value="${price}" />
+                                </td>
 
-                        <td>
-                            <select
-                                class="form-select form-select-sm discount-type-select"
-                                name="Items[${index}].DiscountType">
+                                <td>
+                                    <select
+                                        class="form-select form-select-sm discount-type-select"
+                                        name="Items[${index}].DiscountType">
 
-                                <option value="0"
-                                        selected>
-                                    Value
-                                </option>
+                                        <option value="0"
+                                                selected>
+                                            Value
+                                        </option>
 
-                                <option value="1">
-                                    Percentage
-                                </option>
+                                        <option value="1">
+                                            Percentage
+                                        </option>
 
-                            </select>
-                        </td>
+                                    </select>
+                                </td>
 
-                        <td>
+                                <td>
 
-                            <input type="number"
-                                   step="0.01"
-                                   class="form-control form-control-sm discount-input"
-                                   name="Items[${index}].Discount"
-                                   value="0" />
+                                    <input type="number"
+                                           step="0.01"
+                                           class="form-control form-control-sm discount-input"
+                                           name="Items[${index}].Discount"
+                                           value="0" />
 
-                        </td>
+                                </td>
 
-                        <td class="row-total">
-                            ${total.toFixed(2)}
-                        </td>
+                                <td class="row-total">
+                                    ${total.toFixed(2)}
+                                </td>
 
-                        <td class="row-balance">
-                            ${total.toFixed(2)}
-                        </td>
+                                <td class="row-balance">
+                                    ${total.toFixed(2)}
+                                </td>
 
-                        <td>
+                                <td>
 
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-danger remove-row-btn">
-                                X
-                            </button>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger remove-row-btn">
+                                        X
+                                    </button>
 
-                        </td>
+                                </td>
 
-                    `;
+                            `;
 
 
                     itemsTableBody.appendChild(row);
@@ -1191,7 +1191,7 @@
 
         itemsTableBody.addEventListener(
             'input',
-            function (e) {
+            function(e) {
 
                 if (
                     !e.target.classList.contains(
@@ -1211,7 +1211,7 @@
 
         itemsTableBody.addEventListener(
             'change',
-            function (e) {
+            function(e) {
 
                 if (
                     !e.target.classList.contains(
@@ -1235,7 +1235,7 @@
 
         itemsTableBody.addEventListener(
             'click',
-            function (e) {
+            function(e) {
 
                 if (
                     !e.target.classList.contains(
@@ -1544,8 +1544,8 @@
                 tooLow
 
                     ? 'Discount can\'t be less than the items\' discounts (' +
-                      itemsDisc.toFixed(2) +
-                      ')'
+                    itemsDisc.toFixed(2) +
+                    ')'
 
                     : tooHigh
 
@@ -1638,7 +1638,7 @@
 
         percentageInput.addEventListener(
             'input',
-            function () {
+            function() {
 
                 const v =
                     this.value.trim();
@@ -1673,7 +1673,7 @@
 
         valueDiscountInput.addEventListener(
             'input',
-            function () {
+            function() {
 
                 const v =
                     this.value.trim();
@@ -1718,7 +1718,7 @@
 
                 btn.addEventListener(
                     'click',
-                    function () {
+                    function() {
 
                         const billDate =
                             document.getElementById(
@@ -1747,7 +1747,7 @@
 
                         dueDateInput.value =
                             d.toISOString()
-                             .slice(0, 10);
+                                .slice(0, 10);
 
                     }
                 )
@@ -1803,7 +1803,7 @@
 
         billForm.addEventListener(
             'submit',
-            function (e) {
+            function(e) {
 
                 // خصومات الأصناف
 
@@ -1860,7 +1860,7 @@
 
         window.addEventListener(
             'pageshow',
-            function (e) {
+            function(e) {
 
                 if (e.persisted)
                     saveBtn.disabled = false;
