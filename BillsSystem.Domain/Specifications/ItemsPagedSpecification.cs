@@ -27,7 +27,11 @@ namespace BillsSystem.Domain.Specifications
 
             AddInclude("ItemType.Company");   // الشركة والنوع بيتعرضوا في الجدول
             AddInclude("Unit");
-            ApplyOrderBy(i => i.Id);
+
+            // الترتيب بالشركة الأول علشان أصناف الشركة الواحدة تفضل جنب بعض (حتى مع الـ paging)
+            ApplyOrderBy(i => i.ItemType.Company.Name);
+            ApplyThenByDescending(i => i.Id);
+
             ApplyPaging((Math.Max(page, 1) - 1) * pageSize, pageSize);
         }
     }

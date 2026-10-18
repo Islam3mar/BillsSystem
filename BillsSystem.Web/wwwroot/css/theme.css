@@ -1916,3 +1916,53 @@ a {
         padding: 0;
     }
 }
+
+
+
+/* ===== Catalog tables grouped by company (Types / Categories / Items) ===== */
+.cat-wrap {
+    overflow-x: auto;
+}
+
+    .cat-wrap .cat-table {
+        min-width: 900px;
+    }
+
+.cat-wrap-wide .cat-table {
+    min-width: 1120px;
+}
+
+.cat-table,
+.cat-table .client-subtable {
+    table-layout: fixed;
+    width: 100%;
+}
+
+    .cat-table td {
+        vertical-align: middle;
+        overflow-wrap: anywhere;
+    }
+
+        .cat-table td.company-cell {
+            font-weight: 600;
+        }
+
+    .cat-table .client-group-row {
+        background: var(--surface-2);
+    }
+
+        .cat-table .client-group-row > td:first-child {
+            box-shadow: inset 4px 0 0 var(--brand);
+        }
+
+        .cat-table .client-group-row td {
+            font-weight: 500;
+        }
+
+        .cat-table .client-group-row:hover {
+            background: var(--brand-soft) !important;
+        }
+
+    .cat-table .client-group-details > td {
+        padding: 0 !important;
+    }

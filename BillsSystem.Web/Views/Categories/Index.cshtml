@@ -1,6 +1,26 @@
 ﻿@model IEnumerable<BillsSystem.Domain.Entities.Category>
 @{
     ViewData["Title"] = "Categories";
+
+    const string Cols = "<colgroup><col style=\"width:20%\"><col style=\"width:22%\"><col style=\"width:22%\"><col><col style=\"width:150px\"></colgroup>";
+
+    async Task RowActions(BillsSystem.Domain.Entities.Category row)
+    {
+        <a href="@Url.Action("Edit", new { id = row.Id })" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <form action="@Url.Action("Delete", new { id = row.Id })" method="post" class="d-inline"
+              onsubmit="return confirmDelete(this, 'Are you sure you want to delete this category?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+    }
+
+    // تجميع باسم الشركة، وجوّاها الأقسام مترتبة بالنوع ثم الاسم
+    var groups = Model
+        .GroupBy(x => x.ItemType.CompanyId)
+        .Select(g => g.OrderBy(x => x.ItemType.Name, StringComparer.OrdinalIgnoreCase)
+                      .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList())
+        .OrderBy(g => g[0].ItemType.Company.Name, StringComparer.OrdinalIgnoreCase)
+        .ToList();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -17,8 +37,9 @@
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
-<div class="list-card">
-    <table class="table table-bordered mb-0">
+<div class="list-card cat-wrap">
+    <table class="table mb-0 cat-table">
+        @Html.Raw(Cols)
         <thead>
             <tr>
                 <th>Company</th>
@@ -29,29 +50,68 @@
             </tr>
         </thead>
         <tbody>
-            @if (!Model.Any())
+            @if (!groups.Any())
             {
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No categories added yet</td>
-                </tr>
+                <tr><td colspan="5" class="text-center text-muted py-4">No categories added yet</td></tr>
             }
-            @foreach (var category in Model)
+            @foreach (var group in groups)
             {
-                <tr>
-                    <td>@category.ItemType.Company.Name</td>
-                    <td>@category.ItemType.Name</td>
-                    <td>@category.Name</td>
-                    <td>@category.Notes</td>
-                    <td class="text-center">
-                        <a asp-action="Edit" asp-route-id="@category.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <form asp-action="Delete" asp-route-id="@category.Id" method="post" class="d-inline"
-                              onsubmit="return confirmDelete(this, 'Are you sure you want to delete this category?');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
+                if (group.Count == 1)
+                {
+                    var one = group[0];
+                    <tr>
+                        <td class="company-cell">@one.ItemType.Company.Name</td>
+                        <td>@one.ItemType.Name</td>
+                        <td>@one.Name</td>
+                        <td>@one.Notes</td>
+                        <td class="text-center">@{
+                            await RowActions(one);
+                        }
                     </td>
                 </tr>
             }
-        </tbody>
-    </table>
+                else
+            {
+                var groupId = "cats-grp-" + group[0].ItemType.CompanyId;
+                var typesCount = group.Select(x => x.ItemTypeId).Distinct().Count();
+                <tr class="client-group-row" data-bs-toggle="collapse" data-bs-target="#@groupId"
+                    role="button" aria-expanded="false" aria-controls="@groupId">
+                    <td colspan="2">
+                        <div class="group-title">
+                            <i class="bi bi-chevron-right group-arrow"></i>
+                            <span class="group-name">@group[0].ItemType.Company.Name</span>
+                            <span class="group-count">@group.Count categories</span>
+                        </div>
+                    </td>
+                    <td colspan="2" class="text-muted">@typesCount @(typesCount == 1 ? "type" : "types")</td>
+                    <td class="text-center"><span class="group-toggle">Details <i class="bi bi-chevron-down"></i></span></td>
+                </tr>
+                <tr class="client-group-details">
+                    <td colspan="5">
+                        <div class="collapse" id="@groupId">
+                            <table class="table table-sm mb-0 client-subtable">
+                                @Html.Raw(Cols)
+                                <tbody>
+                                    @foreach (var row in group)
+                                    {
+                                        <tr>
+                                            <td></td>
+                                            <td>@row.ItemType.Name</td>
+                                            <td>@row.Name</td>
+                                            <td>@row.Notes</td>
+                                            <td class="text-center">@{
+                                                await RowActions(row);
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        }
+    }
+</tbody>
+</table>
 </div>
