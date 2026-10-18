@@ -261,6 +261,9 @@ namespace BillsSystem.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
+                    b.HasIndex("Phone")
+                        .IsUnique();
+
                     b.ToTable("Clients");
                 });
 

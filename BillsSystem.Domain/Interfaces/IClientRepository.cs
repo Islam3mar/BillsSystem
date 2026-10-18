@@ -9,5 +9,6 @@ namespace BillsSystem.Domain.Interfaces
     {
         Task<bool> NameExistsAsync(string name, int? excludeId = null);
         Task<bool> EmailExistsAsync(string email, int? excludeId = null);
+        Task<bool> PhoneExistsAsync(string phone, int? excludeId = null);
     }
 }

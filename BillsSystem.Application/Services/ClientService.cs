@@ -67,7 +67,7 @@ namespace BillsSystem.Application.Services
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "Failed to create client {Name}", input.Name);
-                result.NameError = "Couldn't save. The name or email may already exist, or a linked record was removed";
+                result.NameError = "Couldn't save. The name, phone or email may already exist, or a linked record was removed";
                 return result;
             }
 
@@ -101,7 +101,7 @@ namespace BillsSystem.Application.Services
             catch (DbUpdateException ex)
             {
                 _logger.LogError(ex, "Failed to update client {Id}", id);
-                result.NameError = "Couldn't save. The name or email may already exist, or a linked record was removed";
+                result.NameError = "Couldn't save. The name, phone or email may already exist, or a linked record was removed";
                 return result;
             }
 
@@ -167,6 +167,9 @@ namespace BillsSystem.Application.Services
 
             if (await _unitOfWork.Clients.NameExistsAsync(input.Name.Trim(), excludeId))
                 result.NameError = "CLIENT NAME has already existed before";
+
+            if (await _unitOfWork.Clients.PhoneExistsAsync(input.Phone.Trim(), excludeId))
+                result.PhoneError = "This phone number is already used by another client";
 
             // الإيميل اختياري، بس لو اتكتب مينفعش يكون مستخدم عند عميل تاني
             if (input.Email != null && await _unitOfWork.Clients.EmailExistsAsync(input.Email, excludeId))

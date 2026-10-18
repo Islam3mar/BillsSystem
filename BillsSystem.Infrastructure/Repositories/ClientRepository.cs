@@ -26,5 +26,13 @@ namespace BillsSystem.Infrastructure.Repositories
             return await Query.AnyAsync(c =>
                 c.Email != null && c.Email.ToLower() == normalized && (!excludeId.HasValue || c.Id != excludeId.Value));
         }
+
+        // نفس رقم التليفون مينفعش يتكرر على عميلين
+        public async Task<bool> PhoneExistsAsync(string phone, int? excludeId = null)
+        {
+            var normalized = phone.Trim();
+            return await Query.AnyAsync(c =>
+                c.Phone == normalized && (!excludeId.HasValue || c.Id != excludeId.Value));
+        }
     }
 }
